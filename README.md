@@ -16,7 +16,6 @@
 Запуск любого примера:
 ```bash
 npm run example -- ./examples/<file>.ts
-```
 
 ## Сборка и тесты
 ```bash
