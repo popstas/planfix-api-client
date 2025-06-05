@@ -1,11 +1,9 @@
-import { Configuration, ContactApi, CustomFieldsContactApi } from '../src/generated';
+import { ContactApi, CustomFieldsContactApi } from '../src/generated';
+import { loadConfig } from '../src/config';
 
 // Пример массового изменения пользовательского поля у контактов
 export async function massUpdate() {
-  const config = new Configuration({
-    basePath: 'https://your-account.planfix.com/rest',
-    accessToken: 'YOUR_TOKEN',
-  });
+  const config = loadConfig();
 
   const contactApi = new ContactApi(config);
   const customApi = new CustomFieldsContactApi(config);
@@ -46,4 +44,9 @@ export async function massUpdate() {
       },
     });
   }
+}
+
+// Запуск примера если файл вызван напрямую
+if (require.main === module) {
+  massUpdate().catch(err => console.error(err));
 }

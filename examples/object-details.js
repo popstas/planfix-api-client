@@ -7,20 +7,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Configuration, ObjectApi } from '../src/generated';
+import { ObjectApi } from '../src/generated';
+import { loadConfig } from '../src/config';
 // Получение деталей объекта "Продажа"
 export function getObjectDetails() {
     return __awaiter(this, void 0, void 0, function* () {
-        const config = new Configuration({
-            basePath: 'https://your-account.planfix.com/rest',
-            accessToken: 'YOUR_TOKEN',
-        });
+        const config = loadConfig();
         const api = new ObjectApi(config);
         // 1. Основные поля объекта "Продажа"
         const object = yield api.getObjectById({ id: 'Продажа' });
         console.log(object);
         // 2. Дополнительные поля объекта "Продажа"
-        const extras = yield api.getObjectList({ getObjectListRequest: { fields: 'extra' } });
+        const extras = yield api.getObjectList({ getObjectListRequest: { pageSize: 5 } });
         console.log(extras);
     });
+}
+
+// Запуск примера если файл вызван напрямую
+if (require.main === module) {
+    getObjectDetails().catch(err => console.error(err));
 }

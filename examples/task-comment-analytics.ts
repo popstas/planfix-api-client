@@ -1,11 +1,9 @@
-import { Configuration, TaskApi, DataTagsApi } from '../src/generated';
+import { TaskApi, DataTagsApi } from '../src/generated';
+import { loadConfig } from '../src/config';
 
 // Создание комментария с аналитикой в задаче
 export async function createCommentWithAnalytics() {
-  const config = new Configuration({
-    basePath: 'https://your-account.planfix.com/rest',
-    accessToken: 'YOUR_TOKEN',
-  });
+  const config = loadConfig();
 
   const taskApi = new TaskApi(config);
   const dataTagApi = new DataTagsApi(config);
@@ -26,4 +24,9 @@ export async function createCommentWithAnalytics() {
       fields: fields.objects?.map(f => ({ id: f.id!, value: Math.random().toString() }))
     }
   });
+}
+
+// Запуск примера если файл вызван напрямую
+if (require.main === module) {
+  createCommentWithAnalytics().catch(err => console.error(err));
 }

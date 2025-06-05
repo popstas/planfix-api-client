@@ -7,15 +7,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Configuration, ContactApi, CustomFieldsContactApi } from '../src/generated';
+import { ContactApi, CustomFieldsContactApi } from '../src/generated';
+import { loadConfig } from '../src/config';
 // Пример массового изменения пользовательского поля у контактов
 export function massUpdate() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c, _d, _e, _f;
-        const config = new Configuration({
-            basePath: 'https://your-account.planfix.com/rest',
-            accessToken: 'YOUR_TOKEN',
-        });
+        const config = loadConfig();
         const contactApi = new ContactApi(config);
         const customApi = new CustomFieldsContactApi(config);
         // 1. Получить id шаблона контактов "Шаблон контакта"
@@ -55,4 +53,9 @@ export function massUpdate() {
             });
         }
     });
+}
+
+// Запуск примера если файл вызван напрямую
+if (require.main === module) {
+    massUpdate().catch(err => console.error(err));
 }
