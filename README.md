@@ -13,9 +13,15 @@
 2. `task-comment-analytics.ts` – добавление комментария с аналитикой в задачу.
 3. `object-details.ts` – получение подробной информации об объекте.
 
+Запуск любого примера:
+```bash
+npm run example -- ./examples/<file>.ts
+```
+
 ## Сборка и тесты
 ```bash
 npm install
 npm run build
 npm test
 ```
+Скомпилированные файлы будут находиться в каталоге `dist`.
