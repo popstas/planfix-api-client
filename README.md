@@ -13,6 +13,14 @@
 2. `task-comment-analytics.ts` – добавление комментария с аналитикой в задачу.
 3. `object-details.ts` – получение подробной информации об объекте.
 
+### Запуск примеров
+1. Создайте файл `.env` с переменными `PLANFIX_ACCOUNT` и `PLANFIX_TOKEN`.
+2. Запустите скрипт с помощью `ts-node`:
+
+```bash
+npx ts-node examples/object-details.ts
+```
+
 ## Сборка и тесты
 ```bash
 npm install

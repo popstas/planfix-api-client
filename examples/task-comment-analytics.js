@@ -7,15 +7,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Configuration, TaskApi, DataTagsApi } from '../src/generated';
+import { TaskApi, DataTagsApi } from '../src/generated';
+import { loadConfig } from '../src/config';
 // Создание комментария с аналитикой в задаче
 export function createCommentWithAnalytics() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
-        const config = new Configuration({
-            basePath: 'https://your-account.planfix.com/rest',
-            accessToken: 'YOUR_TOKEN',
-        });
+        const config = loadConfig();
         const taskApi = new TaskApi(config);
         const dataTagApi = new DataTagsApi(config);
         // 1. Получить id аналитики "Оплата факт"
@@ -34,4 +32,9 @@ export function createCommentWithAnalytics() {
             }
         });
     });
+}
+
+// Запуск примера если файл вызван напрямую
+if (require.main === module) {
+    createCommentWithAnalytics().catch(err => console.error(err));
 }
