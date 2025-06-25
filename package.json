@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+    "directory-update": "tsx examples/directory-update.ts --csv data/directory.csv"
   },
   "keywords": [],
   "author": "",
@@ -16,10 +17,10 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/jest": "^29.5.14",
+    "dotenv": "^16.4.5",
     "jest": "^29.7.0",
     "ts-jest": "^29.3.4",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "dotenv": "^16.4.5"
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }
