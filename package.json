@@ -9,8 +9,8 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "directory-update": "tsx examples/directory-update.ts --csv data/directory.csv"
-    "example": "tsx"
+    "directory-update": "tsx examples/directory-update.ts --csv data/directory.csv",
+    "example": "tsx examples/mass-update-contacts.ts"
   },
   "keywords": [],
   "author": "",
