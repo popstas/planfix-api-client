@@ -2,13 +2,13 @@
   "compilerOptions": {
     "target": "es2016",
     "lib": ["es2020", "dom"],
-    "rootDir": ".",
-    "outDir": "lib",
+    "rootDir": "src",
+    "outDir": "dist",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }
