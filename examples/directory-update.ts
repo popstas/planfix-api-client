@@ -1,3 +1,5 @@
+// Note: this script doesn't really check for existing values, it just updates them
+// Use with caution
 import { DirectoryApi } from '../src/generated';
 import { loadConfig } from '../src/config';
 import * as fs from 'fs';
@@ -44,7 +46,7 @@ export async function directoryUpdate() {
   const api = new DirectoryApi(config);
 
   // 1. Получить данные справочника
-  const dirResp = await api.getDirectoryById({ id: opts.directoryId, fields: 'all' });
+  const dirResp = await api.getDirectoryById({ id: opts.directoryId, fields: 'id,name,fields' });
   console.log(JSON.stringify(dirResp, null, 2));
   const directory = dirResp.directory;
   if (!directory) throw new Error('Directory not found');
@@ -77,6 +79,7 @@ export async function directoryUpdate() {
     const updates: any[] = [];
     for (const [col, value] of Object.entries(row)) {
       if (col === 'ID') continue;
+      if (!col.trim()) continue;
       const fieldId = fieldMap.get(col);
       if (!fieldId) {
         console.warn(`Field not found: ${col}`);
@@ -95,6 +98,7 @@ export async function directoryUpdate() {
         directoryEntryRequest: { customFieldData: updates },
       });
       const updated = await api.getDirectoryIdEntryKey({ id: String(opts.directoryId), key, fields: 'all' });
+      console.log(`Update key ${key}: ${JSON.stringify(updates)}`);
       console.log(JSON.stringify(updated.entry, null, 2));
     }
   }
