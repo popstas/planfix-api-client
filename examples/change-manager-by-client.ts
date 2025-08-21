@@ -1,4 +1,4 @@
-import { ObjectApi, TaskApi, ComplexTaskFilterOperatorEnum, ComplexTaskFilterTypeEnum, TaskResponse } from '../src/generated';
+import { ObjectApi, TaskApi, ComplexTaskFilterOperatorEnum, ComplexTaskFilterTypeEnum, TaskResponse, GetTaskListOperationRequest, GetTaskListRequest, ComplexTaskFilter } from '../src/generated';
 import { loadConfig } from '../src/config';
 import * as fs from 'fs';
 
@@ -13,11 +13,11 @@ interface Options {
 
 function parseArgs(args: string[]): Options {
   const opts: Options = {
-    csv: '',
-    taskCol: 'task',
-    managerCol: 'manager',
-    managerFieldName: '',
-    clientFieldName: '',
+    csv: 'data/manager-change.csv',
+    taskCol: 'Задача',
+    managerCol: 'Новый менеджер',
+    managerFieldName: 'Менеджер',
+    clientFieldName: 'Клиент',
     templateId: 0,
   };
   for (let i = 0; i < args.length; i++) {
@@ -83,49 +83,68 @@ export async function changeManagerByClient() {
   console.log(`Manager field id: ${managerFieldId}, client field id: ${clientFieldId}`);
 
   const rows = parseCsv(opts.csv);
+  let num = 1;
   for (const row of rows) {
+    console.log(`\n${num}`);
     await changeManager(row);
+    num++;
   }
 
   async function changeManager(row: Record<string, string>) {
     const taskName = row[opts.taskCol];
-    const managerName = row[opts.managerCol];
-    console.log(`Processing task "${taskName}" manager "${managerName}"`);
+    const managerNameCsv = row[opts.managerCol];
+    console.log(`Processing task: ${taskName}`);
 
-    const list = await taskApi.getTaskList({
-      getTaskListRequest: {
-        fields: `id,name,${managerFieldId},${clientFieldId}`,
-        filters: [
-          {
-            type: ComplexTaskFilterTypeEnum.NUMBER_8,
-            operator: ComplexTaskFilterOperatorEnum.Equal,
-            value: taskName,
-          },
-          {
-            type: ComplexTaskFilterTypeEnum.NUMBER_19,
-            operator: ComplexTaskFilterOperatorEnum.Equal,
-            value: opts.templateId,
-          },
-        ],
+    const taskNameParts = taskName.split('-');
+    const clientName = taskNameParts[0].trim();
+    const taskPostfix = taskNameParts[1].trim();
+
+    const filters: ComplexTaskFilter[] = [
+      {
+        type: ComplexTaskFilterTypeEnum.NUMBER_8,
+        operator: ComplexTaskFilterOperatorEnum.Equal,
+        value: clientName,
       },
-    });
+      {
+        type: ComplexTaskFilterTypeEnum.NUMBER_8,
+        operator: ComplexTaskFilterOperatorEnum.Equal,
+        value: taskPostfix,
+      },
+      {
+        type: ComplexTaskFilterTypeEnum.NUMBER_51,
+        operator: ComplexTaskFilterOperatorEnum.Equal,
+        value: opts.templateId,
+      },
+    ];
+    const getTaskListRequest: GetTaskListRequest = {
+      pageSize: 10,
+      offset: 0,
+      fields: `id,name,${managerFieldId},${clientFieldId}`,
+      filters,
+    };
+    const list = await taskApi.getTaskList({getTaskListRequest});
 
-    const tasks = list.objects ?? [];
+    const tasks = list.tasks ?? [];
     if (tasks.length !== 1) {
       console.warn(`Expected exactly one task, got ${tasks.length} for ${taskName}`);
       return;
     }
 
     const task = tasks[0];
-    const managerId = task.customFieldData?.find(cf => cf.field?.id === managerFieldId)?.value as number | undefined;
-    const clientId = task.customFieldData?.find(cf => cf.field?.id === clientFieldId)?.value as number | undefined;
+    const manager = task.customFieldData?.find(cf => cf.field?.id === managerFieldId)?.value;
+    const managerId = manager?.id;
+    const managerName = manager?.name;
+    const clientId = task.customFieldData?.find(cf => cf.field?.id === clientFieldId)?.value?.id as string | undefined;
     if (!clientId) {
       console.warn(`Client not found in task ${task.id}`);
       return;
     }
     console.log(`Task id ${task.id} manager ${managerId} client ${clientId}`);
+    console.log(`task manager: ${managerName}`);
+    console.log(`csv manager:  ${managerNameCsv}`);
+    
 
-    const clientTasks = await taskApi.getTaskList({
+    const clientTasksAnswer = await taskApi.getTaskList({
       getTaskListRequest: {
         fields: `id,name,${managerFieldId},${clientFieldId}`,
         filters: [
@@ -145,25 +164,29 @@ export async function changeManagerByClient() {
       },
     });
 
-    for (const ct of clientTasks.objects ?? []) {
+    return;
+    const clientTasks = clientTasksAnswer.tasks ?? [];
+    console.log(`Found ${clientTasks.length} client tasks`);
+    for (const ct of clientTasks) {
       await setManager(ct, managerId);
     }
   }
 
-  async function setManager(task: TaskResponse, managerId: number | undefined) {
+  async function setManager(task: TaskResponse, managerId: string | undefined) {
     if (!task.id || managerId == null) return;
-    const existing = task.customFieldData?.find(cf => cf.field?.id === managerFieldId)?.value as number | undefined;
-    if (existing === managerId) {
+    const existingId = task.customFieldData?.find(cf => cf.field?.id === managerFieldId)?.value?.id as string | undefined;
+    if (existingId === managerId) {
       console.log(`Task ${task.id} already has manager ${managerId}`);
       return;
     }
-    console.log(`Updating task ${task.id}: manager ${existing} -> ${managerId}`);
+    console.log(`Updating task ${task.id}: manager ${existingId} -> ${managerId}`);
     await taskApi.postTaskById({
       id: task.id,
       taskUpdateRequest: {
-        customFieldData: [{ field: { id: managerFieldId }, value: managerId }],
+        customFieldData: [{ field: { id: managerFieldId }, value: { id: managerId } }],
       },
     });
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
 }
 

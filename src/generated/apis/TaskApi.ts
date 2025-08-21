@@ -365,12 +365,14 @@ export class TaskApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
+        const body = GetTaskListRequestToJSON(requestParameters['getTaskListRequest']);
+        // console.log(JSON.stringify(body));
         const response = await this.request({
             path: `/task/list`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: GetTaskListRequestToJSON(requestParameters['getTaskListRequest']),
+            body: body,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => GetTaskList200ResponseFromJSON(jsonValue));
