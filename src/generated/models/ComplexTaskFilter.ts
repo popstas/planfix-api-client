@@ -150,7 +150,7 @@ export function ComplexTaskFilterFromJSONTyped(json: any, ignoreDiscriminator: b
         
         'type': json['type'],
         'operator': json['operator'],
-        'value': FromJSON(json['value']),
+        'value': json['value'],
         'field': json['field'] == null ? undefined : json['field'],
         'subfilter': json['subfilter'] == null ? undefined : ComplexTaskFilterSubfilterFromJSON(json['subfilter']),
     };
@@ -169,7 +169,7 @@ export function ComplexTaskFilterToJSONTyped(value?: ComplexTaskFilter | null, i
         
         'type': value['type'],
         'operator': value['operator'],
-        'value': ToJSON(value['value']),
+        'value': value['value'],
         'field': value['field'],
         'subfilter': ComplexTaskFilterSubfilterToJSON(value['subfilter']),
     };
