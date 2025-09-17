@@ -120,7 +120,7 @@ export function ComplexContactFilterToJSONTyped(value?: ComplexContactFilter | n
         
         'type': value['type'],
         'operator': value['operator'],
-        'value': ToJSON(value['value']),
+        'value': JSON.stringify(value['value']),
         'field': value['field'],
         'subfilter': ComplexTaskFilterSubfilterToJSON(value['subfilter']),
     };

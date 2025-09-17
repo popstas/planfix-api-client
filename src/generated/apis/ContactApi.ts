@@ -448,8 +448,10 @@ export class ContactApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
+        const contactId = requestParameters['contactRequest']?.id;
+        delete requestParameters['contactRequest']?.id;
         const response = await this.request({
-            path: `/contact/`,
+            path: `/contact/${contactId}?silent=true`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
