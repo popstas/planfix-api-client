@@ -12,7 +12,8 @@
     "directory-update": "tsx examples/directory-update.ts --csv data/directory.csv --directoryId 7472 --force",
     "directory-update-events": "tsx examples/directory-update.ts --csv data/events.csv --directoryId 237 --force",
     "change-manager-by-client": "tsx examples/change-manager-by-client.ts --templateId 634921",
-    "example": "tsx examples/mass-update-contacts.ts"
+    "mass-update-contacts": "tsx examples/mass-update-contacts.ts",
+    "fix-writing-tasks": "tsx examples/fix-writing-tasks.ts"
   },
   "keywords": [],
   "author": "",
