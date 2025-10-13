@@ -706,7 +706,7 @@ export class TaskApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/task/{id}`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id']))),
+            path: `/task/{id}?silent=true`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,

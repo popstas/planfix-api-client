@@ -44,7 +44,7 @@ export interface ComplexTaskFilter {
      * @type {}
      * @memberof ComplexTaskFilter
      */
-    value:  | null;
+    value: number | string | null | number[];
     /**
      * 
      * @type {number}
