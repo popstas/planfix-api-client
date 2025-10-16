@@ -22,7 +22,7 @@ interface FalsePaidEntry {
   name: string;
 }
 
-const pageSize = 50;
+const pageSize = 100;
 
 let opts: Options;
 let config: Configuration;
@@ -107,7 +107,7 @@ async function fetchPublishingTasks(): Promise<TaskResponse[]> {
           value: opts.publishingTaskTemplateId,
         },
         {
-          type: ComplexTaskFilterTypeEnum.NUMBER_109,
+          type: ComplexTaskFilterTypeEnum.NUMBER_105,
           operator: ComplexTaskFilterOperatorEnum.Equal,
           value: 1,
           field: opts.fieldIdService,
@@ -249,9 +249,9 @@ export async function fixPublicationsWithFalsePaid() {
     console.log('  No payment subtask found. Adding to false paid list.');
     falsePaidList.push({ id: taskId, name: taskName });
 
-    await deleteCommentWithDatatag(taskId);
+    // await deleteCommentWithDatatag(taskId);
 
-    await disableServiceField(task);
+    // await disableServiceField(task);
   }
 
   if (falsePaidList.length > 0) {
