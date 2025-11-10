@@ -11,3 +11,7 @@ Guidelines for contributors:
   After regeneration, run `npm run build` and commit changes.
 - Always run `npm test` before committing. Tests must pass.
 - Documentation lives under `docs/` and usage examples under `examples/`.
+- Add new example scripts description to README.md
+- Add log to CSV, reference: change-manager-in-subtasks.ts
+- When args contains fieldName, get fieldId by templateId and fieldName, reference: change-manager-by-client.ts
+- Add --dryRun arg to new example scripts
