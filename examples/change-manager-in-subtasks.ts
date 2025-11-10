@@ -38,6 +38,17 @@ let taskApi: TaskApi;
 let managerFieldId: number;
 let logRows: LogRow[] = [];
 
+function isManagerMatch(managerValue: string | undefined, userId: number): boolean {
+  if (!managerValue) {
+    return false;
+  }
+
+  const trimmedValue = managerValue.trim();
+  const userIdStr = String(userId);
+
+  return trimmedValue === userIdStr || trimmedValue === `user:${userIdStr}`;
+}
+
 function parseArgs(args: string[]): Options {
   const options: Options = {
     templateId: 0,
@@ -266,7 +277,7 @@ async function setManagerForSubtasks(taskId: number, depth = 1): Promise<void> {
       }
 
       const managerId = getManagerId(subtask);
-      if (managerId !== userIdStr) {
+      if (!isManagerMatch(managerId, opts.userId)) {
         const indent = '  '.repeat(depth);
         console.log(
           `${indent}Subtask ${subtaskId}${
@@ -333,7 +344,7 @@ export async function changeManagerInSubtasks() {
       }
 
       const managerId = getManagerId(task);
-      if (managerId !== userIdStr) {
+      if (!isManagerMatch(managerId, opts.userId)) {
         console.log(
           `Task ${taskId}${task.name ? ` (${task.name})` : ''} manager ${
             managerId ?? 'none'
