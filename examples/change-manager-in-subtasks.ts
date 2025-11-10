@@ -7,12 +7,26 @@ import {
 } from '../src/generated';
 import { loadConfig } from '../src/config';
 import type { Configuration } from '../src/generated';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface Options {
   templateId: number;
   managerFieldName: string;
   userId: number;
   dryRun: boolean;
+  csv: string;
+}
+
+interface LogRow {
+  date: string;
+  level: string;
+  task_id: string;
+  task_name: string;
+  current_manager: string;
+  expected_manager: string;
+  action: string;
+  note: string;
 }
 
 const pageSize = 100;
@@ -22,6 +36,7 @@ let config: Configuration;
 let objectApi: ObjectApi;
 let taskApi: TaskApi;
 let managerFieldId: number;
+let logRows: LogRow[] = [];
 
 function parseArgs(args: string[]): Options {
   const options: Options = {
@@ -29,6 +44,7 @@ function parseArgs(args: string[]): Options {
     managerFieldName: 'Менеджер',
     userId: 0,
     dryRun: false,
+    csv: 'data/change-manager-in-subtasks.csv',
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -41,6 +57,8 @@ function parseArgs(args: string[]): Options {
       options.userId = Number(args[++i]);
     } else if (arg === '--dryRun') {
       options.dryRun = true;
+    } else if (arg === '--csv') {
+      options.csv = args[++i];
     }
   }
 
@@ -53,8 +71,79 @@ function parseArgs(args: string[]): Options {
   if (!options.userId) {
     throw new Error('userId is required');
   }
+  if (!options.csv) {
+    throw new Error('csv is required');
+  }
 
   return options;
+}
+
+function ensureDirectory(filePath: string) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+function writeCsv(filePath: string, rows: LogRow[]) {
+  if (!rows.length) {
+    return;
+  }
+
+  const headers: (keyof LogRow)[] = [
+    'date',
+    'level',
+    'task_id',
+    'task_name',
+    'current_manager',
+    'expected_manager',
+    'action',
+    'note',
+  ];
+
+  const escape = (value: string) => {
+    if (value == null) {
+      return '';
+    }
+    if (/[",\n]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  ensureDirectory(filePath);
+
+  const lines: string[] = [];
+  const fileExists = fs.existsSync(filePath);
+  let addHeader = true;
+
+  if (fileExists) {
+    const stats = fs.statSync(filePath);
+    addHeader = stats.size === 0;
+  }
+
+  if (addHeader) {
+    lines.push(headers.join(','));
+  }
+
+  rows.forEach(row => {
+    lines.push(headers.map(header => escape(row[header] ?? '')).join(','));
+  });
+
+  fs.appendFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+}
+
+function recordLogRow(row: Omit<LogRow, 'date'> & { date?: string }) {
+  logRows.push({
+    date: row.date ?? new Date().toISOString(),
+    level: row.level,
+    task_id: row.task_id,
+    task_name: row.task_name,
+    current_manager: row.current_manager,
+    expected_manager: row.expected_manager,
+    action: row.action,
+    note: row.note,
+  });
 }
 
 function getManagerId(task: TaskResponse): string | undefined {
@@ -187,6 +276,16 @@ async function setManagerForSubtasks(taskId: number, depth = 1): Promise<void> {
           }`,
         );
 
+        recordLogRow({
+          level: `subtask-${depth}`,
+          task_id: String(subtaskId),
+          task_name: subtask.name ?? '',
+          current_manager: managerId ?? '',
+          expected_manager: userIdStr,
+          action: opts.dryRun ? 'dry-run' : 'update',
+          note: 'Subtask manager mismatch',
+        });
+
         if (!opts.dryRun) {
           await taskApi.postTaskById({
             id: subtaskId,
@@ -218,29 +317,45 @@ export async function changeManagerInSubtasks() {
   config = loadConfig();
   objectApi = new ObjectApi(config);
   taskApi = new TaskApi(config);
+  logRows = [];
 
-  managerFieldId = await fetchManagerFieldId();
+  try {
+    managerFieldId = await fetchManagerFieldId();
 
-  const tasks = await fetchTasks();
-  const userIdStr = String(opts.userId);
-  console.log(`Found ${tasks.length} tasks`);
+    const tasks = await fetchTasks();
+    const userIdStr = String(opts.userId);
+    console.log(`Found ${tasks.length} tasks`);
 
-  for (const task of tasks) {
-    const taskId = task.id;
-    if (!taskId) {
-      continue;
+    for (const task of tasks) {
+      const taskId = task.id;
+      if (!taskId) {
+        continue;
+      }
+
+      const managerId = getManagerId(task);
+      if (managerId !== userIdStr) {
+        console.log(
+          `Task ${taskId}${task.name ? ` (${task.name})` : ''} manager ${
+            managerId ?? 'none'
+          } != ${userIdStr}`,
+        );
+
+        recordLogRow({
+          level: 'task',
+          task_id: String(taskId),
+          task_name: task.name ?? '',
+          current_manager: managerId ?? '',
+          expected_manager: userIdStr,
+          action: 'warning',
+          note: 'Task manager mismatch',
+        });
+      }
+
+      await setManagerForSubtasks(taskId);
     }
-
-    const managerId = getManagerId(task);
-    if (managerId !== userIdStr) {
-      console.log(
-        `Task ${taskId}${task.name ? ` (${task.name})` : ''} manager ${
-          managerId ?? 'none'
-        } != ${userIdStr}`,
-      );
-    }
-
-    await setManagerForSubtasks(taskId);
+  } finally {
+    writeCsv(opts.csv, logRows);
+    logRows = [];
   }
 }
 
