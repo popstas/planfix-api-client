@@ -14,7 +14,8 @@
     "change-manager-by-client": "tsx examples/change-manager-by-client.ts --templateId 634921",
     "mass-update-contacts": "tsx examples/mass-update-contacts.ts",
     "fix-writing-tasks": "tsx examples/fix-writing-tasks.ts",
-    "fix-publications-with-false-paid": "tsx examples/fix-publications-with-false-paid.ts"
+    "fix-publications-with-false-paid": "tsx examples/fix-publications-with-false-paid.ts",
+    "change-manager-in-subtasks": "tsx examples/change-manager-in-subtasks.ts"
   },
   "keywords": [],
   "author": "",
