@@ -109,6 +109,7 @@ async function fetchTasks(): Promise<TaskResponse[]> {
   let offset = 0;
 
   while (true) {
+    console.log(`Fetching tasks offset ${offset}`);
     const requestFields = `id,name,${managerFieldId}`;
     const response = await taskApi.getTaskList({
       getTaskListRequest: {
@@ -122,9 +123,9 @@ async function fetchTasks(): Promise<TaskResponse[]> {
             value: opts.templateId,
           },
           {
-            type: ComplexTaskFilterTypeEnum.NUMBER_71,
+            type: ComplexTaskFilterTypeEnum.USER,
             operator: ComplexTaskFilterOperatorEnum.Equal,
-            value: opts.userId,
+            value: `user:${opts.userId}`,
           },
         ],
       },

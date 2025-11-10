@@ -64,6 +64,7 @@ export interface ComplexTaskFilter {
  * @export
  */
 export const ComplexTaskFilterTypeEnum = {
+    USER: 2,
     NUMBER_8: 8,
     NUMBER_9: 9,
     NUMBER_10: 10,
