@@ -15,3 +15,8 @@ Guidelines for contributors:
 - Add log to CSV, reference: change-manager-in-subtasks.ts
 - When args contains fieldName, get fieldId by templateId and fieldName, reference: change-manager-by-client.ts
 - Add --dryRun arg to new example scripts
+
+# Pull request naming
+Create name using angular commit message format.
+`feat:` and `fix:` are using in CHANGELOG.md. It's a release notes for developers. Name your PRs in a way that it's easy to understand what was changed. Forbidden to use `feat:` and `fix:` prefixes for chore tasks that don't add new features or fix bugs.
+
