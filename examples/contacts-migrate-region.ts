@@ -33,6 +33,8 @@ let directoryApi: DirectoryApi;
 let logRows: LogRow[] = [];
 let handbookCacheFile: string | undefined;
 const contactCacheDir = path.resolve('data/cache/contacts');
+let statsChanged = 0;
+let statsNotChanged = 0;
 
 function parseArgs(args: string[]): Options {
   const options: Options = {
@@ -354,7 +356,11 @@ function findMatchingRegions(
   // Split by common separators: comma, semicolon, slash, pipe, or "•"
   const parts = cityValue
     .split(/[,;\/|•]/)
-    .map(part => part.trim())
+    .map(part => {
+      // Remove text in parentheses (e.g., "РФ (гражданство)" -> "РФ")
+      part = part.replace(/\([^)]*\)/g, '').trim();
+      return part;
+    })
     .filter(part => part.length > 0);
 
   const matchedRegions: Array<{ key: number; name: string }> = [];
@@ -472,7 +478,7 @@ function deleteContactCache(contactId: number): void {
   if (!fs.existsSync(contactCacheDir)) return;
   
   const files = fs.readdirSync(contactCacheDir);
-  const pattern = new RegExp(`^id-${contactId}_fields:`);
+  const pattern = new RegExp(`^id-${contactId}_fields`);
   for (const file of files) {
     if (pattern.test(file)) {
       const filePath = path.join(contactCacheDir, file);
@@ -563,7 +569,7 @@ function extractCurrentRegionKeys(contact: any, fieldRegionId: number): Set<numb
 }
 
 function shouldUpdateRegions(
-  matchedRegions: Array<{ id: number; name: string }>,
+  matchedRegions: Array<{ key: number; name: string }>,
   currentRegionKeys: Set<number>,
 ): boolean {
   const matchedKeys = new Set(matchedRegions.map(r => r.key));
@@ -573,15 +579,22 @@ function shouldUpdateRegions(
 }
 
 function formatRegionUpdateData(
-  matchedRegions: Array<{ id: number; name: string }>,
+  matchedRegions: Array<{ key: number; name: string }>,
   fieldRegionId: number,
 ): any {
-  
+  if (matchedRegions.length === 1) {
+    // Single value: use value with key
     return {
       field: { id: fieldRegionId },
-      value: matchedRegions.map(r => ({ id: r.id || r.key })),
+      value: { key: matchedRegions[0].key },
     };
-
+  } else {
+    // Multiple values: use value with array of { key: number } objects
+    return {
+      field: { id: fieldRegionId },
+      value: matchedRegions.map(r => ({ key: r.key })),
+    };
+  }
 }
 
 async function extractErrorDetails(error: unknown): Promise<{ message: string; status?: number; statusText?: string }> {
@@ -611,7 +624,7 @@ async function extractErrorDetails(error: unknown): Promise<{ message: string; s
 
 async function updateContactRegions(
   contact: any,
-  matchedRegions: Array<{ id: number; name: string }>,
+  matchedRegions: Array<{ key: number; name: string }>,
   fieldRegionId: number,
   dryRun: boolean,
   contactNumber: string,
@@ -619,7 +632,7 @@ async function updateContactRegions(
   currentRegionKeys: Set<number>,
 ): Promise<void> {
   const regionNames = matchedRegions.map(r => r.name).join(', ');
-  const regionKeys = matchedRegions.map(r => r.id);
+  const regionKeys = matchedRegions.map(r => r.key);
   const currentKeysStr = Array.from(currentRegionKeys).join(', ');
   const newKeysStr = regionKeys.join(', ');
 
@@ -661,6 +674,7 @@ async function updateContactRegions(
     console.log(
       `Updated contact ${contact.id} (${contactNumber}): city "${cityValueStr}" -> regions "${regionNames}"`,
     );
+    statsChanged++;
     recordLogRow({
       level: 'info',
       contact_id: String(contact.id),
@@ -751,6 +765,7 @@ async function processContact(
     console.log(
       `Not changed contact ${contact.id} (${contactNumber}): city "${cityValueStr}" -> regions "${regionNames}" (already set)`,
     );
+    statsNotChanged++;
     recordLogRow({
       level: 'info',
       contact_id: String(contact.id),
@@ -780,6 +795,8 @@ export async function contactsMigrateRegion() {
   contactApi = new ContactApi(config);
   directoryApi = new DirectoryApi(config);
   logRows = [];
+  statsChanged = 0;
+  statsNotChanged = 0;
 
   try {
     console.log(`Reading CSV from ${opts.csv}`);
@@ -849,6 +866,7 @@ export async function contactsMigrateRegion() {
     }
 
     console.log(`\nCompleted processing ${rows.length} contacts`);
+    console.log(`Changed: ${statsChanged}, Not changed: ${statsNotChanged}`);
   } finally {
     const logPath = opts.csv.replace(/\.csv$/, '-log.csv');
     writeCsv(logPath, logRows);
