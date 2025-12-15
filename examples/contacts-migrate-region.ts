@@ -167,8 +167,8 @@ function parseCsv(filePath: string): Record<string, string>[] {
   });
 }
 
-async function fetchAllHandbookEntries(handbookId: number): Promise<Map<string, { key: number; name: string }>> {
-  const regionMap = new Map<string, { key: number; name: string }>();
+async function fetchAllHandbookEntries(handbookId: number): Promise<Map<string, { id: number; name: string }>> {
+  const regionMap = new Map<string, { id: number; name: string }>();
   let offset = 0;
 
   console.log(`Fetching handbook entries from directory ${handbookId}...`);
@@ -237,9 +237,9 @@ async function fetchAllHandbookEntries(handbookId: number): Promise<Map<string, 
       
       if (name) {
         const nameStr = name.trim();
-        regionMap.set(nameStr, { key: entry.key, name: nameStr });
+        regionMap.set(nameStr, { id: entry.key, name: nameStr });
       } else {
-        console.warn(`Entry key ${entry.key} has no region value`);
+        console.warn(`Entry id ${entry.key} has no region value`);
       }
     }
 
@@ -347,8 +347,8 @@ function normalizeRegionName(name: string): string {
 
 function findMatchingRegions(
   cityValue: string,
-  regionMap: Map<string, { key: number; name: string }>,
-): Array<{ key: number; name: string }> {
+  regionMap: Map<string, { id: number; name: string }>,
+): Array<{ id: number; name: string }> {
   if (!cityValue || !cityValue.trim()) {
     return [];
   }
@@ -363,8 +363,8 @@ function findMatchingRegions(
     })
     .filter(part => part.length > 0);
 
-  const matchedRegions: Array<{ key: number; name: string }> = [];
-  const seenKeys = new Set<number>();
+  const matchedRegions: Array<{ id: number; name: string }> = [];
+  const seenIds = new Set<number>();
 
   for (const part of parts) {
     // Normalize the part using the mapping
@@ -374,13 +374,13 @@ function findMatchingRegions(
 
     // Try includes match first (more flexible)
     for (const [regionName, regionData] of regionMap.entries()) {
-      if (seenKeys.has(regionData.key)) continue;
+      if (seenIds.has(regionData.id)) continue;
       
       const normalizedRegion = regionName.toLowerCase();
       // Check if part is included in region name or region name is included in part
       if (normalizedRegion.includes(normalizedPart) || normalizedPart.includes(normalizedRegion)) {
         matchedRegions.push(regionData);
-        seenKeys.add(regionData.key);
+        seenIds.add(regionData.id);
         found = true;
         break;
       }
@@ -390,9 +390,9 @@ function findMatchingRegions(
     if (!found) {
       for (const [regionName, regionData] of regionMap.entries()) {
         const normalizedRegion = regionName.toLowerCase();
-        if (normalizedRegion === normalizedPart && !seenKeys.has(regionData.key)) {
+        if (normalizedRegion === normalizedPart && !seenIds.has(regionData.id)) {
           matchedRegions.push(regionData);
-          seenKeys.add(regionData.key);
+          seenIds.add(regionData.id);
           break;
         }
       }
@@ -541,13 +541,13 @@ function extractCurrentRegionKeys(contact: any, fieldRegionId: number): Set<numb
     return currentRegionKeys;
   }
 
-  // Try valueId first (for directory fields, this might be the key)
+  // Try valueId first (for directory fields, this might be the id)
   if ('valueId' in regionField && regionField.valueId != null) {
     const valueId = regionField.valueId;
-    const keys = Array.isArray(valueId) ? valueId : [valueId];
-    keys.forEach(k => currentRegionKeys.add(k as number));
+    const ids = Array.isArray(valueId) ? valueId : [valueId];
+    ids.forEach(id => currentRegionKeys.add(id as number));
   }
-  // Try value with key property (could be array or single)
+  // Try value with id property (could be array or single)
   else if (regionField.value) {
     if (Array.isArray(regionField.value)) {
       regionField.value.forEach((v: any) => {
@@ -557,9 +557,9 @@ function extractCurrentRegionKeys(contact: any, fieldRegionId: number): Set<numb
           currentRegionKeys.add(v);
         }
       });
-    } else if (typeof regionField.value === 'object' && 'key' in regionField.value) {
-      const key = (regionField.value as { id?: number }).id;
-      if (key != null) currentRegionKeys.add(key);
+    } else if (typeof regionField.value === 'object' && 'id' in regionField.value) {
+      const id = (regionField.value as { id?: number }).id;
+      if (id != null) currentRegionKeys.add(id);
     } else if (typeof regionField.value === 'number') {
       currentRegionKeys.add(regionField.value);
     }
@@ -569,32 +569,24 @@ function extractCurrentRegionKeys(contact: any, fieldRegionId: number): Set<numb
 }
 
 function shouldUpdateRegions(
-  matchedRegions: Array<{ key: number; name: string }>,
+  matchedRegions: Array<{ id: number; name: string }>,
   currentRegionKeys: Set<number>,
 ): boolean {
-  const matchedKeys = new Set(matchedRegions.map(r => r.key));
-  const allMatched = matchedRegions.every(r => currentRegionKeys.has(r.key));
-  const noChanges = allMatched && currentRegionKeys.size === matchedKeys.size;
+  const matchedIds = new Set(matchedRegions.map(r => r.id));
+  const allMatched = matchedRegions.every(r => currentRegionKeys.has(r.id));
+  const noChanges = allMatched && currentRegionKeys.size === matchedIds.size;
   return !noChanges;
 }
 
 function formatRegionUpdateData(
-  matchedRegions: Array<{ key: number; name: string }>,
+  matchedRegions: Array<{ id: number; name: string }>,
   fieldRegionId: number,
 ): any {
-  if (matchedRegions.length === 1) {
-    // Single value: use value with key
-    return {
-      field: { id: fieldRegionId },
-      value: { key: matchedRegions[0].key },
-    };
-  } else {
-    // Multiple values: use value with array of { key: number } objects
-    return {
-      field: { id: fieldRegionId },
-      value: matchedRegions.map(r => ({ key: r.key })),
-    };
-  }
+  // Always use array for value, even for single values
+  return {
+    field: { id: fieldRegionId },
+    value: matchedRegions.map(r => ({ id: r.id })),
+  };
 }
 
 async function extractErrorDetails(error: unknown): Promise<{ message: string; status?: number; statusText?: string }> {
@@ -624,7 +616,7 @@ async function extractErrorDetails(error: unknown): Promise<{ message: string; s
 
 async function updateContactRegions(
   contact: any,
-  matchedRegions: Array<{ key: number; name: string }>,
+  matchedRegions: Array<{ id: number; name: string }>,
   fieldRegionId: number,
   dryRun: boolean,
   contactNumber: string,
@@ -632,13 +624,13 @@ async function updateContactRegions(
   currentRegionKeys: Set<number>,
 ): Promise<void> {
   const regionNames = matchedRegions.map(r => r.name).join(', ');
-  const regionKeys = matchedRegions.map(r => r.key);
+  const regionIds = matchedRegions.map(r => r.id);
   const currentKeysStr = Array.from(currentRegionKeys).join(', ');
-  const newKeysStr = regionKeys.join(', ');
+  const newKeysStr = regionIds.join(', ');
 
   if (dryRun) {
     console.log(
-      `[DRY RUN] Would update contact ${contact.id} (${contactNumber}): city "${cityValueStr}" -> regions "${regionNames}" (keys: ${newKeysStr})`,
+      `[DRY RUN] Would update contact ${contact.id} (${contactNumber}): city "${cityValueStr}" -> regions "${regionNames}" (ids: ${newKeysStr})`,
     );
     recordLogRow({
       level: 'info',
@@ -661,7 +653,7 @@ async function updateContactRegions(
         customFieldData: [updateData],
       },
     };
-    await contactApi.postContact(params);
+    const result = await contactApi.postContact(params);
 
     // Reset handbook cache after successful update
     if (handbookCacheFile && fs.existsSync(handbookCacheFile)) {
@@ -706,7 +698,7 @@ async function updateContactRegions(
 
 async function processContact(
   row: Record<string, string>,
-  regionMap: Map<string, { key: number; name: string }>,
+  regionMap: Map<string, { id: number; name: string }>,
 ): Promise<void> {
   const parsed = parseContactRow(row);
   if (!parsed) {
@@ -762,9 +754,9 @@ async function processContact(
   
   if (!shouldUpdateRegions(matchedRegions, currentRegionKeys)) {
     const regionNames = matchedRegions.map(r => r.name).join(', ');
-    console.log(
-      `Not changed contact ${contact.id} (${contactNumber}): city "${cityValueStr}" -> regions "${regionNames}" (already set)`,
-    );
+    // console.log(
+    //   `Not changed contact ${contact.id} (${contactNumber}): city "${cityValueStr}" -> regions "${regionNames}" (already set)`,
+    // );
     statsNotChanged++;
     recordLogRow({
       level: 'info',
@@ -807,7 +799,7 @@ export async function contactsMigrateRegion() {
     // Cache regionMap by opts.handbookId for 3600 seconds (1 hour)
     const cacheDir = path.resolve('data/cache');
     handbookCacheFile = path.join(cacheDir, `regionMap-${opts.handbookId}.json`);
-    let regionMap: Map<string, { key: number; name: string }>;
+    let regionMap: Map<string, { id: number; name: string }>;
 
     // Helper: safely read JSON cache file
     function readCache(): any | undefined {
@@ -841,8 +833,15 @@ export async function contactsMigrateRegion() {
 
     const cached = readCache();
     if (cached && Array.isArray(cached)) {
+      // Migrate old cache format (key -> id) if needed
+      const migrated: Array<[string, { id: number; name: string }]> = cached.map(([name, data]: [string, any]) => {
+        if (data && 'key' in data && !('id' in data)) {
+          return [name, { id: data.key, name: data.name }];
+        }
+        return [name, data];
+      });
       // restore Map from cached array
-      regionMap = new Map(cached);
+      regionMap = new Map(migrated);
       console.log(`Loaded regionMap from cache (${handbookCacheFile})`);
     } else {
       regionMap = await fetchAllHandbookEntries(opts.handbookId);
