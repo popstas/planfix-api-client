@@ -15,7 +15,8 @@
     "mass-update-contacts": "tsx examples/mass-update-contacts.ts",
     "fix-writing-tasks": "tsx examples/fix-writing-tasks.ts",
     "fix-publications-with-false-paid": "tsx examples/fix-publications-with-false-paid.ts",
-    "change-manager-in-subtasks": "tsx examples/change-manager-in-subtasks.ts"
+    "change-manager-in-subtasks": "tsx examples/change-manager-in-subtasks.ts",
+    "contacts-migrate-telegram": "tsx examples/contacts-migrate-telegram.ts"
   },
   "keywords": [],
   "author": "",

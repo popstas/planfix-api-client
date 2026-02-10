@@ -13,6 +13,7 @@
 2. `task-comment-analytics.ts` – добавление комментария с аналитикой в задачу.
 3. `object-details.ts` – получение подробной информации об объекте.
 4. `set-service-field.ts` – установка служебного булевого поля для списка задач из CSV.
+5. `contacts-migrate-telegram.ts` – перенос значения из пользовательского поля (старый Telegram) в системное поле telegram у контактов; аргументы: `--dryRun`, `--telegramOldId`; лог в `data/contacts-migrate-telegram-log.csv`.
 
 Запуск любого примера:
 ```bash
