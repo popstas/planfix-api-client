@@ -101,7 +101,7 @@ export function ComplexContactFilterFromJSONTyped(json: any, ignoreDiscriminator
         
         'type': json['type'],
         'operator': json['operator'],
-        'value': FromJSON(json['value']),
+        'value': json['value'],
         'field': json['field'] == null ? undefined : json['field'],
         'subfilter': json['subfilter'] == null ? undefined : ComplexTaskFilterSubfilterFromJSON(json['subfilter']),
     };
@@ -120,7 +120,7 @@ export function ComplexContactFilterToJSONTyped(value?: ComplexContactFilter | n
         
         'type': value['type'],
         'operator': value['operator'],
-        'value': ToJSON(value['value']),
+        'value': value['value'],
         'field': value['field'],
         'subfilter': ComplexTaskFilterSubfilterToJSON(value['subfilter']),
     };

@@ -89,7 +89,7 @@ export function ComplexDataTagFilterFromJSONTyped(json: any, ignoreDiscriminator
         'type': json['type'],
         'field': json['field'],
         'operator': json['operator'],
-        'value': FromJSON(json['value']),
+        'value': json['value'],
     };
 }
 
@@ -107,7 +107,7 @@ export function ComplexDataTagFilterToJSONTyped(value?: ComplexDataTagFilter | n
         'type': value['type'],
         'field': value['field'],
         'operator': value['operator'],
-        'value': ToJSON(value['value']),
+        'value': value['value'],
     };
 }
 

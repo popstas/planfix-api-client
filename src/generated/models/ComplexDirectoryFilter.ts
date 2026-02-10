@@ -89,7 +89,7 @@ export function ComplexDirectoryFilterFromJSONTyped(json: any, ignoreDiscriminat
         'type': json['type'],
         'field': json['field'],
         'operator': json['operator'],
-        'value': FromJSON(json['value']),
+        'value': json['value'],
     };
 }
 
@@ -107,7 +107,7 @@ export function ComplexDirectoryFilterToJSONTyped(value?: ComplexDirectoryFilter
         'type': value['type'],
         'field': value['field'],
         'operator': value['operator'],
-        'value': ToJSON(value['value']),
+        'value': value['value'],
     };
 }
 

@@ -115,7 +115,7 @@ export function ComplexProjectFilterFromJSONTyped(json: any, ignoreDiscriminator
         
         'type': json['type'],
         'operator': json['operator'],
-        'value': FromJSON(json['value']),
+        'value': json['value'],
         'field': json['field'] == null ? undefined : json['field'],
     };
 }
@@ -133,7 +133,7 @@ export function ComplexProjectFilterToJSONTyped(value?: ComplexProjectFilter | n
         
         'type': value['type'],
         'operator': value['operator'],
-        'value': ToJSON(value['value']),
+        'value': value['value'],
         'field': value['field'],
     };
 }

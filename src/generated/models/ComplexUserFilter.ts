@@ -87,7 +87,7 @@ export function ComplexUserFilterFromJSONTyped(json: any, ignoreDiscriminator: b
         
         'type': json['type'],
         'operator': json['operator'],
-        'value': FromJSON(json['value']),
+        'value': json['value'],
         'field': json['field'] == null ? undefined : json['field'],
     };
 }
@@ -105,7 +105,7 @@ export function ComplexUserFilterToJSONTyped(value?: ComplexUserFilter | null, i
         
         'type': value['type'],
         'operator': value['operator'],
-        'value': ToJSON(value['value']),
+        'value': value['value'],
         'field': value['field'],
     };
 }
