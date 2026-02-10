@@ -3,6 +3,8 @@
 import { DirectoryApi } from '../src/generated';
 import { loadConfig } from '../src/config';
 import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 interface Options {
   csv: string;
@@ -104,6 +106,7 @@ export async function directoryUpdate() {
   }
 }
 
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
   directoryUpdate().catch(err => console.error(err));
 }

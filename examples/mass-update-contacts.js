@@ -9,6 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { ContactApi, CustomFieldsContactApi } from '../src/generated';
 import { loadConfig } from '../src/config';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 // Пример массового изменения пользовательского поля у контактов
 export function massUpdate() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -56,6 +58,7 @@ export function massUpdate() {
 }
 
 // Запуск примера если файл вызван напрямую
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
     massUpdate().catch(err => console.error(err));
 }

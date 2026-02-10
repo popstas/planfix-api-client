@@ -3,6 +3,7 @@ import { loadConfig } from '../src/config';
 import type { Configuration } from '../src/generated';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 interface Options {
   csv: string;
@@ -290,7 +291,8 @@ export async function setServiceField() {
   }
 }
 
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
   setServiceField().catch(err => {
     console.error(err);
     process.exitCode = 1;

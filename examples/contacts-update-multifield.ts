@@ -1,5 +1,7 @@
 import { ContactApi } from '../src/generated';
 import { loadConfig } from '../src/config';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 // Пример копирования значения поля oldFieldId в мультиполе newFieldId
 export async function contactsUpdateMultifield() {
@@ -54,6 +56,7 @@ export async function contactsUpdateMultifield() {
 }
 
 // Запуск примера, если файл вызван напрямую
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
   contactsUpdateMultifield().catch(err => console.error(err));
 }

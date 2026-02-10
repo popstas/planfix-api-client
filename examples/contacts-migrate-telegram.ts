@@ -3,6 +3,7 @@ import { loadConfig } from '../src/config';
 import type { Configuration } from '../src/generated';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 interface Options {
   telegramOldId: number;
@@ -239,15 +240,9 @@ export async function contactsMigrateTelegram() {
 }
 
 function isMainModule(): boolean {
-  try {
-    if (typeof require !== 'undefined' && require.main === module) return true;
-  } catch {
-    // ESM: no require
-  }
-  if (typeof process !== 'undefined' && process.argv[1]) {
-    return process.argv[1].endsWith('contacts-migrate-telegram.ts') || process.argv[1].endsWith('contacts-migrate-telegram.js');
-  }
-  return false;
+  if (typeof process === 'undefined' || !process.argv[1]) return false;
+  const __filename = fileURLToPath(import.meta.url);
+  return path.resolve(process.argv[1]) === path.resolve(__filename);
 }
 
 if (isMainModule()) {

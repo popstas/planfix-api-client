@@ -9,6 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { ObjectApi } from '../src/generated';
 import { loadConfig } from '../src/config';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 // Получение деталей объекта "Продажа"
 export function getObjectDetails() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -24,6 +26,7 @@ export function getObjectDetails() {
 }
 
 // Запуск примера если файл вызван напрямую
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
     getObjectDetails().catch(err => console.error(err));
 }

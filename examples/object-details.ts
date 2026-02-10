@@ -1,5 +1,7 @@
 import { ObjectApi } from '../src/generated';
 import { loadConfig } from '../src/config';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 // Получение деталей объекта "Продажа"
 export async function getObjectDetails() {
@@ -16,6 +18,7 @@ export async function getObjectDetails() {
 }
 
 // Запуск примера если файл вызван напрямую
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
   getObjectDetails().catch(err => console.error(err));
 }

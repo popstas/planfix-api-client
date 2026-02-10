@@ -8,6 +8,8 @@ import {
   Configuration,
 } from '../src/generated';
 import { loadConfig } from '../src/config';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 interface Options {
   publishingTaskTemplateId: number;
@@ -264,7 +266,8 @@ export async function fixPublicationsWithFalsePaid() {
   }
 }
 
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
   fixPublicationsWithFalsePaid().catch(err => {
     console.error(err);
     process.exitCode = 1;

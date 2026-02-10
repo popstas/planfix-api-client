@@ -1,5 +1,7 @@
 import { TaskApi, DataTagsApi } from '../src/generated';
 import { loadConfig } from '../src/config';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 // Создание комментария с аналитикой в задаче
 export async function createCommentWithAnalytics() {
@@ -27,6 +29,7 @@ export async function createCommentWithAnalytics() {
 }
 
 // Запуск примера если файл вызван напрямую
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
   createCommentWithAnalytics().catch(err => console.error(err));
 }
