@@ -15,6 +15,7 @@
 4. `set-service-field.ts` – установка служебного булевого поля для списка задач из CSV.
 5. `contacts-migrate-telegram.ts` – перенос значения из пользовательского поля (старый Telegram) в системное поле telegram у контактов; аргументы: `--dryRun`, `--telegramOldId`; лог в `data/contacts-migrate-telegram-log.csv`.
 6. `contacts-update-supplier-gdrive.ts` – синхронизация пользовательского поля `gdrive_emails` у контактов по CSV (`Номер`, `Email`); обновляет только при расхождении списков email; аргументы: `--csv`, `--fieldId`, `--dryRun`.
+7. `contacts-update-last-payment-date.ts` – обновление даты последнего платежа в пользовательском поле контакта по CSV (`Клиент номер`, `Дата`); формат даты `DD-MM-YYYY`; аргументы: `--csv`, `--fieldId`, `--limit`, `--dryRun`, `--logCsv`; лог в `data/contacts-last-payment-date-log.csv`.
 
 Запуск любого примера:
 ```bash
