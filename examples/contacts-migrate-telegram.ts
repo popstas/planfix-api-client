@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 interface Options {
   telegramOldId: number;
   dryRun: boolean;
+  limit: number;
 }
 
 interface LogRow {
@@ -34,6 +35,7 @@ function parseArgs(args: string[]): Options {
   const options: Options = {
     telegramOldId: 383,
     dryRun: false,
+    limit: 0,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -42,6 +44,8 @@ function parseArgs(args: string[]): Options {
       options.telegramOldId = Number(args[++i]);
     } else if (arg === '--dryRun') {
       options.dryRun = true;
+    } else if (arg === '--limit') {
+      options.limit = Number(args[++i]);
     }
   }
 
@@ -228,6 +232,10 @@ export async function contactsMigrateTelegram() {
           continue;
         }
         await processContact(contact, rawValue);
+        if (opts.limit > 0 && statsChanged >= opts.limit) {
+          console.log(`Reached limit of ${opts.limit} updated contact(s).`);
+          return;
+        }
       }
     }
 
