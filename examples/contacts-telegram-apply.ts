@@ -27,21 +27,21 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
-const SRC = 'data/contacts-telegram-fix/telegram-cleanup-llm.csv';
-const LOG = 'data/contacts-telegram-fix/apply-log.csv';
+const DEFAULT_SRC = 'data/contacts-telegram-fix/telegram-cleanup-llm.csv';
 
 const CF_CONTACT_PERSON = 385;
 const CF_WHATSAPP = 893;
 const CF_COMMENTS = 895;
 
-interface Options { apply: boolean; limit: number; }
+interface Options { apply: boolean; limit: number; src: string; }
 
 function parseArgs(args: string[]): Options {
-  const o: Options = { apply: false, limit: 0 };
+  const o: Options = { apply: false, limit: 0, src: DEFAULT_SRC };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--apply') o.apply = true;
     else if (args[i] === '--dryRun') o.apply = false;
     else if (args[i] === '--limit') o.limit = Number(args[++i]);
+    else if (args[i] === '--src') o.src = String(args[++i]);
   }
   return o;
 }
@@ -81,11 +81,13 @@ async function main() {
   const config: Configuration = loadConfig();
   const api = new ContactApi(config);
 
-  const rows = parseCsv(fs.readFileSync(SRC, 'utf-8'));
+  const rows = parseCsv(fs.readFileSync(opts.src, 'utf-8'));
   const head = rows.shift()!;
   const I = (n: string) => head.indexOf(n);
   const get = (r: string[], n: string) => r[I(n)] ?? '';
+  const LOG = opts.src.replace(/\.csv$/, '') + '-apply-log.csv';
 
+  console.log(`Source: ${opts.src}`);
   console.log(`Mode: ${opts.apply ? 'APPLY (writing to Planfix)' : 'DRY RUN'}${opts.limit ? `, limit ${opts.limit}` : ''}`);
 
   const logRows: string[] = ['contact_id,url,changed_fields,result,note'];
