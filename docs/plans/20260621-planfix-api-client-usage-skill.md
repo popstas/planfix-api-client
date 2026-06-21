@@ -81,21 +81,27 @@
 ## Implementation Steps
 
 ### Task 1: Scaffold skill directory, SKILL.md frontmatter, and compile-checked example skeleton
-- [ ] create `skills/planfix-api-client/` and `skills/planfix-api-client/references/` directories
-- [ ] create `examples/skill-quickstart.ts`: import `loadConfig` from `../src/config` and
+- [x] create `skills/planfix-api-client/` and `skills/planfix-api-client/references/` directories
+- [x] create `examples/skill-quickstart.ts`: import `loadConfig` from `../src/config` and
       `TaskApi` from `../src/generated`, instantiate the api, and a run-guard
       (`import.meta.url` check like other examples) that performs only a harmless read
       (e.g. `getTaskList` with `pageSize: 1`) or no-op; honor a `--dryRun` flag per AGENTS.md
-- [ ] ensure `examples/skill-quickstart.ts` is within the tsc compile scope (confirm `tsconfig.json`
+- [x] ensure `examples/skill-quickstart.ts` is within the tsc compile scope (confirm `tsconfig.json`
       `include`/`files`; if examples are not compiled by `npm run build`, document the exact
       typecheck command used, e.g. `npx tsc --noEmit`, and use it consistently as the gate)
-- [ ] create `skills/planfix-api-client/SKILL.md` with valid frontmatter — `name: planfix-api-client`
+      — ⚠️ examples are NOT in `npm run build` (`include: src/**/*.ts`). Added `tsconfig.skill.json`
+      (extends base, `module: esnext` for `import.meta`, `rootDir: .`, includes the quickstart).
+      Documented gate: `npx tsc --noEmit -p tsconfig.skill.json`.
+- [x] create `skills/planfix-api-client/SKILL.md` with valid frontmatter — `name: planfix-api-client`
       and a `description` containing trigger phrases (e.g. "use this Planfix client", "write a
       Planfix script", "query Planfix tasks/contacts", "update a Planfix custom field",
       "planfix-api-client") — plus an Overview + "When to use" stub and placeholder links to the
       four reference files
-- [ ] run `npm run build` (or the documented typecheck command) — **must pass** before Task 2
-- [ ] run `npm test` — must pass (no regressions) before Task 2
+- [x] run `npm run build` (or the documented typecheck command) — **must pass** before Task 2
+      (gate `npx tsc --noEmit -p tsconfig.skill.json` passes; `npm run build` passes)
+- [x] run `npm test` — must pass (no regressions) before Task 2 — unit suite `tests/basic.test.ts`
+      passes; the 4 `integration.test.ts` failures are pre-existing (require a live Planfix
+      account/`.env`) and unchanged with my work stashed (no regressions)
 
 ### Task 2: API surface map — `references/api-surface.md`
 - [ ] document all 18 `*Api` classes, the entity each covers, and how to import/instantiate them
