@@ -25,6 +25,7 @@ import type {
   TaskResponse,
   ContactResponse,
 } from '../src/generated';
+import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -38,6 +39,52 @@ function parseArgs(args: string[]): Options {
     if (arg === '--dryRun') options.dryRun = true;
   }
   return options;
+}
+
+/**
+ * CSV audit-log helper documented in `references/writing-scripts.md`. Convention from
+ * `examples/change-manager-in-subtasks.ts`: write a header only when the file is new/empty,
+ * escape values, and append. New write scripts log each change so a run is reviewable.
+ */
+export function appendCsvLog(filePath: string, headers: string[], rows: string[][]): void {
+  if (!rows.length) return;
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const escape = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+
+  const addHeader = !fs.existsSync(filePath) || fs.statSync(filePath).size === 0;
+  const lines = addHeader ? [headers.join(',')] : [];
+  for (const row of rows) lines.push(row.map(escape).join(','));
+  fs.appendFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+}
+
+/**
+ * `fieldName → fieldId` lookup documented in `references/writing-scripts.md`. Convention
+ * from `examples/change-manager-by-client.ts`: resolve human field names to numeric ids
+ * once from a template's `customFieldData` (via `getObjectById`). Proves the `ObjectApi`
+ * read path the writing-scripts doc cites.
+ */
+export async function lookupFieldIds(
+  objectApi: ObjectApi,
+  templateId: number,
+  names: string[],
+): Promise<Map<string, number>> {
+  const resp = await objectApi.getObjectById({ id: templateId });
+  const object = resp.object;
+  if (!object) throw new Error(`template ${templateId} not found`);
+
+  const byName = new Map<string, number>();
+  object.customFieldData?.forEach(cf => {
+    const id = cf.field?.id;
+    const name = cf.field?.name;
+    if (id && name) byName.set(name, id);
+  });
+
+  for (const name of names) {
+    if (!byName.has(name)) throw new Error(`field "${name}" not found in template ${templateId}`);
+  }
+  return byName;
 }
 
 /**

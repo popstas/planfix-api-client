@@ -149,15 +149,18 @@
       passes: "No errors found")
 
 ### Task 5: Writing new example scripts (conventions) — `references/writing-scripts.md`
-- [ ] document the new-script template per `AGENTS.md`: `loadConfig()` setup, `--dryRun` arg parsing
+- [x] document the new-script template per `AGENTS.md`: `loadConfig()` setup, `--dryRun` arg parsing
       (from `contacts-migrate-telegram.ts`), CSV logging to `data/*.csv` (header-if-empty +
       `appendFileSync` + value escaping, from `change-manager-in-subtasks.ts`), and the
       fieldName→fieldId lookup by `templateId` (from `change-manager-by-client.ts`)
-- [ ] document how to run scripts (`npm run example -- ./examples/<file>.ts` / `tsx`) and the
+- [x] document how to run scripts (`npm run example -- ./examples/<file>.ts` / `tsx`) and the
       reminder to add each new example's description to `README.md`
-- [ ] ensure `examples/skill-quickstart.ts` itself embodies these conventions (dryRun arg, a small
+- [x] ensure `examples/skill-quickstart.ts` itself embodies these conventions (dryRun arg, a small
       CSV-log helper, and a fieldId-lookup helper) so it doubles as the canonical template
-- [ ] run the typecheck gate — **must pass** before Task 6
+      — added exported `appendCsvLog()` and `lookupFieldIds()` helpers alongside the existing
+      `parseArgs()` dryRun handling
+- [x] run the typecheck gate — **must pass** before Task 6 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found"); all relative links in `writing-scripts.md` verified to resolve
 
 ### Task 6: Finalize SKILL.md — workflow, triggers, and wiring
 - [ ] complete `SKILL.md`: tighten the `description`/trigger phrases, add a "When to use" section and
