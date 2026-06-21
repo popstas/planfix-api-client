@@ -16,6 +16,8 @@
  * typechecking only (added in later tasks), never dispatched.
  */
 import { TaskApi, ContactApi, ObjectApi, CustomFieldsTaskApi } from '../src/generated';
+import type { PostTaskByIdRequest } from '../src/generated/apis/TaskApi';
+import type { PostContactByIdRequest, PostContactRequest } from '../src/generated/apis/ContactApi';
 import { loadConfig } from '../src/config';
 import type {
   Configuration,
@@ -114,6 +116,56 @@ export async function readExamples(apis: ReturnType<typeof buildApis>): Promise<
     const c = await contactApi.getContactById({ id: String(contacts[0].id), fields: 'id,name' });
     console.log(`Contact: ${c.contact?.name ?? ''}`);
   }
+}
+
+/**
+ * Writing patterns documented in `references/mutations.md`. The `dryRun` guard means NO
+ * request is ever sent — the `postX` request objects are constructed so `tsc` validates
+ * the update method names and request body shapes (`postTaskById`/`postContactById`/
+ * `postContact`, the `taskUpdateRequest`/`contactRequest` bodies, the `silent` flag, and
+ * the typed `customFieldData: [{ field: { id }, value }]` custom-field shape).
+ */
+export async function updateExamples(
+  apis: ReturnType<typeof buildApis>,
+  opts: Options,
+): Promise<void> {
+  const { taskApi, contactApi } = apis;
+
+  // Update a task (id is a number). Includes a typed custom-field update.
+  const taskUpdate: PostTaskByIdRequest = {
+    id: 123,
+    silent: true,
+    taskUpdateRequest: {
+      name: 'Renamed task',
+      // `value` is typed `object` in the generated model; wrap primitives (arrays count).
+      customFieldData: [{ field: { id: 385 }, value: ['Industrial'] }],
+    },
+  };
+
+  // Update a contact (id is a string).
+  const contactUpdate: PostContactByIdRequest = {
+    id: '456',
+    silent: true,
+    contactRequest: { telegram: '@newhandle' },
+  };
+
+  // Create/upsert a contact via postContact (no id in path; id inside body upserts).
+  const contactCreate: PostContactRequest = {
+    contactRequest: {
+      name: 'New Contact',
+      customFieldData: [{ field: { id: 385 }, value: ['x'] }],
+    },
+  };
+
+  // Safe mutation practice: only send when NOT a dry run.
+  if (opts.dryRun) {
+    console.log('[DRY RUN] Would send task/contact updates; nothing sent.');
+    return;
+  }
+
+  await taskApi.postTaskById(taskUpdate);
+  await contactApi.postContactById(contactUpdate);
+  await contactApi.postContact(contactCreate);
 }
 
 export async function skillQuickstart(): Promise<void> {

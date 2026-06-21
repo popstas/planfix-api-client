@@ -131,15 +131,22 @@
       passes: "No errors found"); all relative links in `querying.md` verified to resolve
 
 ### Task 4: Updating / writing data — `references/mutations.md`
-- [ ] document mass-update loop (list → filter → update) from `mass-update-contacts.ts`, custom-field
+- [x] document mass-update loop (list → filter → update) from `mass-update-contacts.ts`, custom-field
       updates (`customFields: [{ id, value }]`), and the update methods `postTaskById`,
       `postContactById`, `postContact`
-- [ ] document **safe mutation practice**: gate every write behind `--dryRun`, log each change,
+      — documented the update method table (id type split: task `number` / contact `string`), and
+      the **typed** custom-field shape `customFieldData: [{ field: { id }, value }]`. ⚠️ scope note:
+      the generated TS type is `customFieldData` (not the raw `customFields: [{ id, value }]` some
+      older examples use), and `value` is typed `object` so primitives are wrapped (`value: [x]`).
+      Doc calls out the discrepancy.
+- [x] document **safe mutation practice**: gate every write behind `--dryRun`, log each change,
       consider the `silent` flag; never run destructive ops from a run-guard
-- [ ] extend `examples/skill-quickstart.ts` with an `updateExamples()` function that constructs (but,
+- [x] extend `examples/skill-quickstart.ts` with an `updateExamples()` function that constructs (but,
       under dryRun, does not send) `postContactById` / `postTaskById` calls so tsc validates the
-      update request shapes
-- [ ] run the typecheck gate — **must pass** before Task 5
+      update request shapes (also exercises `postContact` and the `PostTaskByIdRequest` /
+      `PostContactByIdRequest` / `PostContactRequest` typed shapes)
+- [x] run the typecheck gate — **must pass** before Task 5 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found")
 
 ### Task 5: Writing new example scripts (conventions) — `references/writing-scripts.md`
 - [ ] document the new-script template per `AGENTS.md`: `loadConfig()` setup, `--dryRun` arg parsing
