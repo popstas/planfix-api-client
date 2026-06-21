@@ -163,13 +163,19 @@
       passes: "No errors found"); all relative links in `writing-scripts.md` verified to resolve
 
 ### Task 6: Finalize SKILL.md — workflow, triggers, and wiring
-- [ ] complete `SKILL.md`: tighten the `description`/trigger phrases, add a "When to use" section and
+- [x] complete `SKILL.md`: tighten the `description`/trigger phrases, add a "When to use" section and
       a short decision workflow ("goal → which reference"): API map → `api-surface.md`, reading →
       `querying.md`, writing → `mutations.md`, new script → `writing-scripts.md`, runnable starting
       point → `examples/skill-quickstart.ts`
-- [ ] verify every link in SKILL.md and the reference files resolves (skill→references,
+      — `description` carries trigger phrases ("write a Planfix script", "query Planfix
+      tasks/contacts", "update a Planfix custom field", "planfix-api-client"); added "When to use",
+      "Quick start", and a goal→reference decision table
+- [x] verify every link in SKILL.md and the reference files resolves (skill→references,
       skill→`docs/*`, skill→`examples/skill-quickstart.ts`)
-- [ ] run the typecheck gate — **must pass** before Task 7
+      — all 17 unique links checked from their containing dirs: all resolve (references/*,
+      ../../examples/skill-quickstart.ts, ../../../docs/*.md, ../../../examples/*.ts)
+- [x] run the typecheck gate — **must pass** before Task 7
+      (`npx tsc --noEmit -p tsconfig.skill.json` passes: "No errors found")
 
 ### Task 7: Verify acceptance criteria
 - [ ] confirm all four scope areas are covered (writing scripts, querying, updating, API surface map)

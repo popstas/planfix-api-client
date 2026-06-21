@@ -45,11 +45,15 @@ Config comes from `.env` (`PLANFIX_ACCOUNT`, `PLANFIX_TOKEN`) via `loadConfig()`
 
 ## Workflow: goal → reference
 
-- Which class/endpoint covers an entity → [references/api-surface.md](references/api-surface.md)
-- Reading / querying data (list, get-by-id, pagination, filters) → [references/querying.md](references/querying.md)
-- Updating / writing data (mass-update, custom fields, safe mutation) → [references/mutations.md](references/mutations.md)
-- Writing a new example script (conventions, CSV log, dryRun) → [references/writing-scripts.md](references/writing-scripts.md)
-- Runnable starting point → [`examples/skill-quickstart.ts`](../../examples/skill-quickstart.ts)
+Start from your goal and open the one matching reference:
+
+| Your goal | Open |
+| --- | --- |
+| Find which `*Api` class / endpoint covers a Planfix entity | [references/api-surface.md](references/api-surface.md) |
+| Read data — list, get-by-id, pagination, complex filters | [references/querying.md](references/querying.md) |
+| Write data — mass-update, custom fields, safe mutation | [references/mutations.md](references/mutations.md) |
+| Scaffold a new example script — config, dryRun, CSV log, fieldId lookup | [references/writing-scripts.md](references/writing-scripts.md) |
+| Copy a runnable, compile-checked starting point | [`examples/skill-quickstart.ts`](../../examples/skill-quickstart.ts) |
 
 ## Verification gate
 
