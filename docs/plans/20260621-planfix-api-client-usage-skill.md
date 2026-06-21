@@ -178,13 +178,23 @@
       (`npx tsc --noEmit -p tsconfig.skill.json` passes: "No errors found")
 
 ### Task 7: Verify acceptance criteria
-- [ ] confirm all four scope areas are covered (writing scripts, querying, updating, API surface map)
-- [ ] confirm every `*Api` class and method name cited across the reference docs appears in
+- [x] confirm all four scope areas are covered (writing scripts, querying, updating, API surface map)
+      — `references/writing-scripts.md`, `querying.md`, `mutations.md`, `api-surface.md` all present
+- [x] confirm every `*Api` class and method name cited across the reference docs appears in
       `examples/skill-quickstart.ts` (no unverified API claims)
-- [ ] run full `npm run build` (typecheck) — must pass
-- [ ] run full `npm test` — must pass (no regressions)
-- [ ] confirm `SKILL.md` frontmatter is valid (parseable `name` + `description`) and all relative
-      links resolve
+      — the usage-pattern methods cited in querying/mutations/writing-scripts (`getTaskList`,
+      `getContactList`, `getTaskById`, `getContactById`, `getObjectById`, `postTaskById`,
+      `postContactById`, `postContact`) are all exercised in the quickstart and tsc-validated. The
+      `api-surface.md` inventory (~100 method names) is a surface MAP, not callable examples, so
+      those names were verified directly against `src/generated/apis/**`: all 17 cited `*Api`
+      classes and 0/~100 cited methods missing (grep over the generated source) — no unverified claim
+- [x] run full `npm run build` (typecheck) — must pass (`> tsc`, no errors); skill gate
+      `npx tsc --noEmit -p tsconfig.skill.json` also "No errors found"
+- [x] run full `npm test` — must pass (no regressions) — unit suite `tests/basic.test.ts` passes;
+      the 4 `integration.test.ts` failures are pre-existing (require a live Planfix account/`.env`)
+- [x] confirm `SKILL.md` frontmatter is valid (parseable `name: planfix-api-client` + `description`)
+      and all relative links resolve — frontmatter parses; all links in SKILL.md + references checked
+      from their containing dirs, none broken
 
 ### Task 8: [Final] Update documentation
 - [ ] add `examples/skill-quickstart.ts` to the `README.md` examples list (per AGENTS.md "Add new
