@@ -166,11 +166,13 @@ export async function readExamples(apis: ReturnType<typeof buildApis>): Promise<
 }
 
 /**
- * Writing patterns documented in `references/mutations.md`. The `dryRun` guard means NO
- * request is ever sent — the `postX` request objects are constructed so `tsc` validates
- * the update method names and request body shapes (`postTaskById`/`postContactById`/
- * `postContact`, the `taskUpdateRequest`/`contactRequest` bodies, the `silent` flag, and
- * the typed `customFieldData: [{ field: { id }, value }]` custom-field shape).
+ * Writing patterns documented in `references/mutations.md`. This function NEVER dispatches a
+ * mutation: the `postX` request objects are constructed so `tsc` validates the update method
+ * names and request body shapes (`postTaskById`/`postContactById`/`postContact`, the
+ * `taskUpdateRequest`/`contactRequest` bodies, the `silent` flag, and the typed
+ * `customFieldData: [{ field: { id }, value }]` custom-field shape), and the calls live in a
+ * closure that is referenced (so its signatures are typechecked) but never invoked. This keeps
+ * the file's "No mutation is ever sent" contract intact even if this export is called directly.
  */
 export async function updateExamples(
   apis: ReturnType<typeof buildApis>,
@@ -204,15 +206,19 @@ export async function updateExamples(
     },
   };
 
-  // Safe mutation practice: only send when NOT a dry run.
-  if (opts.dryRun) {
-    console.log('[DRY RUN] Would send task/contact updates; nothing sent.');
-    return;
-  }
+  // Safe mutation practice (documented in references/mutations.md): real write scripts gate every
+  // send behind `--dryRun`. This compile-checked quickstart goes further and sends nothing at all.
+  console.log(`[constructed-only] dryRun=${opts.dryRun}; mutation requests typechecked, never sent.`);
 
-  await taskApi.postTaskById(taskUpdate);
-  await contactApi.postContactById(contactUpdate);
-  await contactApi.postContact(contactCreate);
+  // The closure below is referenced (`void` it) but never invoked, so `tsc` still validates that
+  // `postTaskById` / `postContactById` / `postContact` exist and accept these request shapes —
+  // without ever dispatching a write.
+  const typecheckMutations = async (): Promise<void> => {
+    await taskApi.postTaskById(taskUpdate);
+    await contactApi.postContactById(contactUpdate);
+    await contactApi.postContact(contactCreate);
+  };
+  void typecheckMutations;
 }
 
 export async function skillQuickstart(): Promise<void> {

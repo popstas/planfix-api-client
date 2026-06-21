@@ -89,10 +89,10 @@ Pass `filters` (an array) in the list request to filter server-side. The models 
 `ComplexTaskFilter` and `ComplexContactFilter`; each entry is
 `{ type, operator, value, field?, subfilter? }`:
 
-- `type` — a numeric filter type (`ComplexTaskFilterTypeEnum` / `ComplexContactFilterTypeEnum`,
-  e.g. `2` = assignee/USER). `null` is allowed for custom-field filters paired with `field`.
+- `type` — a numeric filter type (`ComplexTaskFilterTypeEnum`, e.g. `2` = assignee/USER). `null`
+  is allowed for custom-field filters paired with `field`.
 - `operator` — `'equal' | 'notequal' | 'gt' | 'lt'`.
-- `value` — `string | number | number[] | null` (contacts allow `null`).
+- `value` — `string | number | number[] | null`.
 - `field` — custom-field id (use with the custom-field filter `type`).
 - `subfilter` — nested filter for related records.
 
@@ -106,6 +106,13 @@ const res = await taskApi.getTaskList({
   getTaskListRequest: { offset: 0, pageSize: 100, fields: 'id,name', filters },
 });
 ```
+
+> ⚠️ **Contacts differ.** The generated `ComplexContactFilter` is degenerate: its
+> `ComplexContactFilterTypeEnum` is empty and `value` is typed `null`, so the only shape that
+> typechecks today is `{ type: null, operator, value: null, field?, subfilter? }` — the numeric
+> `type` / scalar `value` above are **`ComplexTaskFilter`-only**. Don't copy the task example for
+> contact filters; use `field` (+ `subfilter`) or fall back to `filterId` / a saved filter until the
+> generated contact model gains real filter types.
 
 Full filter-type tables and Planfix docs: [`docs/complex-filters.md`](../../../docs/complex-filters.md).
 
