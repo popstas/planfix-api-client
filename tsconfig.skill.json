@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "examples/skill-quickstart.ts"]
+}

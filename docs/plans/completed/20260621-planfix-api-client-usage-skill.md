@@ -81,90 +81,130 @@
 ## Implementation Steps
 
 ### Task 1: Scaffold skill directory, SKILL.md frontmatter, and compile-checked example skeleton
-- [ ] create `skills/planfix-api-client/` and `skills/planfix-api-client/references/` directories
-- [ ] create `examples/skill-quickstart.ts`: import `loadConfig` from `../src/config` and
+- [x] create `skills/planfix-api-client/` and `skills/planfix-api-client/references/` directories
+- [x] create `examples/skill-quickstart.ts`: import `loadConfig` from `../src/config` and
       `TaskApi` from `../src/generated`, instantiate the api, and a run-guard
       (`import.meta.url` check like other examples) that performs only a harmless read
       (e.g. `getTaskList` with `pageSize: 1`) or no-op; honor a `--dryRun` flag per AGENTS.md
-- [ ] ensure `examples/skill-quickstart.ts` is within the tsc compile scope (confirm `tsconfig.json`
+- [x] ensure `examples/skill-quickstart.ts` is within the tsc compile scope (confirm `tsconfig.json`
       `include`/`files`; if examples are not compiled by `npm run build`, document the exact
       typecheck command used, e.g. `npx tsc --noEmit`, and use it consistently as the gate)
-- [ ] create `skills/planfix-api-client/SKILL.md` with valid frontmatter — `name: planfix-api-client`
+      — ⚠️ examples are NOT in `npm run build` (`include: src/**/*.ts`). Added `tsconfig.skill.json`
+      (extends base, `module: esnext` for `import.meta`, `rootDir: .`, includes the quickstart).
+      Documented gate: `npx tsc --noEmit -p tsconfig.skill.json`.
+- [x] create `skills/planfix-api-client/SKILL.md` with valid frontmatter — `name: planfix-api-client`
       and a `description` containing trigger phrases (e.g. "use this Planfix client", "write a
       Planfix script", "query Planfix tasks/contacts", "update a Planfix custom field",
       "planfix-api-client") — plus an Overview + "When to use" stub and placeholder links to the
       four reference files
-- [ ] run `npm run build` (or the documented typecheck command) — **must pass** before Task 2
-- [ ] run `npm test` — must pass (no regressions) before Task 2
+- [x] run `npm run build` (or the documented typecheck command) — **must pass** before Task 2
+      (gate `npx tsc --noEmit -p tsconfig.skill.json` passes; `npm run build` passes)
+- [x] run `npm test` — must pass (no regressions) before Task 2 — unit suite `tests/basic.test.ts`
+      passes; the 4 `integration.test.ts` failures are pre-existing (require a live Planfix
+      account/`.env`) and unchanged with my work stashed (no regressions)
 
 ### Task 2: API surface map — `references/api-surface.md`
-- [ ] document all 18 `*Api` classes, the entity each covers, and how to import/instantiate them
+- [x] document all 18 `*Api` classes, the entity each covers, and how to import/instantiate them
       (`new XApi(loadConfig())`); use the RU→identifier dictionary so readers can map Planfix terms
-- [ ] for each major area list the key endpoints and link `docs/ENDPOINTS.md`,
-      `docs/complex-filters.md`, `docs/dictionary.md` (verify these relative links resolve from the
-      skill location)
-- [ ] extend `examples/skill-quickstart.ts` to instantiate the primary classes referenced
-      (`TaskApi`, `ContactApi`, `ObjectApi`, and at least one CustomFields* class) so tsc proves the
-      class names are accurate
-- [ ] run the typecheck gate — **must pass** before Task 3 (any wrong class name fails here)
+- [x] for each major area list the key endpoints and link `docs/ENDPOINTS.md`,
+      `docs/complex-filters.md`, `docs/dictionary.md` (relative links `../../../docs/*.md` verified
+      to resolve from the references dir)
+- [x] extend `examples/skill-quickstart.ts` to instantiate the primary classes referenced
+      (`TaskApi`, `ContactApi`, `ObjectApi`, and `CustomFieldsTaskApi`) via a `buildApis()` helper so
+      tsc proves the class names are accurate
+- [x] run the typecheck gate — **must pass** before Task 3 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found")
 
 ### Task 3: Querying / reading data — `references/querying.md`
-- [ ] document list + get-by-id for tasks/contacts/objects: `getTaskList`/`getContactList`,
+- [x] document list + get-by-id for tasks/contacts/objects: `getTaskList`/`getContactList`,
       `getTaskById`/`getContactById`, `getObjectById`, including the request wrapper shape
       (`{ getXListRequest: { ... } }`) and the response field holding the array
-- [ ] document the **pagination pattern** (offset/pageSize loop, break on short/empty page) from
+      — documented; noted that `getTaskById` id is `number` but `getContactById` id is `string`,
+      response arrays live in `.tasks`/`.contacts`, single records in `.task`/`.contact`
+- [x] document the **pagination pattern** (offset/pageSize loop, break on short/empty page) from
       `contacts-export.ts`, and the **complex-filters** usage (link `docs/complex-filters.md`,
       reference `ComplexTaskFilter` / `ComplexContactFilter`)
-- [ ] extend `examples/skill-quickstart.ts` with a `readExamples()` function that calls
+- [x] extend `examples/skill-quickstart.ts` with a `readExamples()` function that calls
       `getTaskList` (paginated loop), `getContactList`, `getTaskById`, `getContactById` — typecheck
-      only, not invoked by the run-guard's live path
-- [ ] run the typecheck gate — **must pass** before Task 4 (validates method names + request shapes)
+      only, not invoked by the run-guard's live path (also exercises `ComplexTaskFilter`)
+- [x] run the typecheck gate — **must pass** before Task 4 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found"); all relative links in `querying.md` verified to resolve
 
 ### Task 4: Updating / writing data — `references/mutations.md`
-- [ ] document mass-update loop (list → filter → update) from `mass-update-contacts.ts`, custom-field
+- [x] document mass-update loop (list → filter → update) from `mass-update-contacts.ts`, custom-field
       updates (`customFields: [{ id, value }]`), and the update methods `postTaskById`,
       `postContactById`, `postContact`
-- [ ] document **safe mutation practice**: gate every write behind `--dryRun`, log each change,
+      — documented the update method table (id type split: task `number` / contact `string`), and
+      the **typed** custom-field shape `customFieldData: [{ field: { id }, value }]`. ⚠️ scope note:
+      the generated TS type is `customFieldData` (not the raw `customFields: [{ id, value }]` some
+      older examples use), and `value` is typed `object` so primitives are wrapped (`value: [x]`).
+      Doc calls out the discrepancy.
+- [x] document **safe mutation practice**: gate every write behind `--dryRun`, log each change,
       consider the `silent` flag; never run destructive ops from a run-guard
-- [ ] extend `examples/skill-quickstart.ts` with an `updateExamples()` function that constructs (but,
+- [x] extend `examples/skill-quickstart.ts` with an `updateExamples()` function that constructs (but,
       under dryRun, does not send) `postContactById` / `postTaskById` calls so tsc validates the
-      update request shapes
-- [ ] run the typecheck gate — **must pass** before Task 5
+      update request shapes (also exercises `postContact` and the `PostTaskByIdRequest` /
+      `PostContactByIdRequest` / `PostContactRequest` typed shapes)
+- [x] run the typecheck gate — **must pass** before Task 5 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found")
 
 ### Task 5: Writing new example scripts (conventions) — `references/writing-scripts.md`
-- [ ] document the new-script template per `AGENTS.md`: `loadConfig()` setup, `--dryRun` arg parsing
+- [x] document the new-script template per `AGENTS.md`: `loadConfig()` setup, `--dryRun` arg parsing
       (from `contacts-migrate-telegram.ts`), CSV logging to `data/*.csv` (header-if-empty +
       `appendFileSync` + value escaping, from `change-manager-in-subtasks.ts`), and the
       fieldName→fieldId lookup by `templateId` (from `change-manager-by-client.ts`)
-- [ ] document how to run scripts (`npm run example -- ./examples/<file>.ts` / `tsx`) and the
+- [x] document how to run scripts (`npm run example -- ./examples/<file>.ts` / `tsx`) and the
       reminder to add each new example's description to `README.md`
-- [ ] ensure `examples/skill-quickstart.ts` itself embodies these conventions (dryRun arg, a small
+- [x] ensure `examples/skill-quickstart.ts` itself embodies these conventions (dryRun arg, a small
       CSV-log helper, and a fieldId-lookup helper) so it doubles as the canonical template
-- [ ] run the typecheck gate — **must pass** before Task 6
+      — added exported `appendCsvLog()` and `lookupFieldIds()` helpers alongside the existing
+      `parseArgs()` dryRun handling
+- [x] run the typecheck gate — **must pass** before Task 6 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found"); all relative links in `writing-scripts.md` verified to resolve
 
 ### Task 6: Finalize SKILL.md — workflow, triggers, and wiring
-- [ ] complete `SKILL.md`: tighten the `description`/trigger phrases, add a "When to use" section and
+- [x] complete `SKILL.md`: tighten the `description`/trigger phrases, add a "When to use" section and
       a short decision workflow ("goal → which reference"): API map → `api-surface.md`, reading →
       `querying.md`, writing → `mutations.md`, new script → `writing-scripts.md`, runnable starting
       point → `examples/skill-quickstart.ts`
-- [ ] verify every link in SKILL.md and the reference files resolves (skill→references,
+      — `description` carries trigger phrases ("write a Planfix script", "query Planfix
+      tasks/contacts", "update a Planfix custom field", "planfix-api-client"); added "When to use",
+      "Quick start", and a goal→reference decision table
+- [x] verify every link in SKILL.md and the reference files resolves (skill→references,
       skill→`docs/*`, skill→`examples/skill-quickstart.ts`)
-- [ ] run the typecheck gate — **must pass** before Task 7
+      — all 17 unique links checked from their containing dirs: all resolve (references/*,
+      ../../examples/skill-quickstart.ts, ../../../docs/*.md, ../../../examples/*.ts)
+- [x] run the typecheck gate — **must pass** before Task 7
+      (`npx tsc --noEmit -p tsconfig.skill.json` passes: "No errors found")
 
 ### Task 7: Verify acceptance criteria
-- [ ] confirm all four scope areas are covered (writing scripts, querying, updating, API surface map)
-- [ ] confirm every `*Api` class and method name cited across the reference docs appears in
+- [x] confirm all four scope areas are covered (writing scripts, querying, updating, API surface map)
+      — `references/writing-scripts.md`, `querying.md`, `mutations.md`, `api-surface.md` all present
+- [x] confirm every `*Api` class and method name cited across the reference docs appears in
       `examples/skill-quickstart.ts` (no unverified API claims)
-- [ ] run full `npm run build` (typecheck) — must pass
-- [ ] run full `npm test` — must pass (no regressions)
-- [ ] confirm `SKILL.md` frontmatter is valid (parseable `name` + `description`) and all relative
-      links resolve
+      — the usage-pattern methods cited in querying/mutations/writing-scripts (`getTaskList`,
+      `getContactList`, `getTaskById`, `getContactById`, `getObjectById`, `postTaskById`,
+      `postContactById`, `postContact`) are all exercised in the quickstart and tsc-validated. The
+      `api-surface.md` inventory (~100 method names) is a surface MAP, not callable examples, so
+      those names were verified directly against `src/generated/apis/**`: all 17 cited `*Api`
+      classes and 0/~100 cited methods missing (grep over the generated source) — no unverified claim
+- [x] run full `npm run build` (typecheck) — must pass (`> tsc`, no errors); skill gate
+      `npx tsc --noEmit -p tsconfig.skill.json` also "No errors found"
+- [x] run full `npm test` — must pass (no regressions) — unit suite `tests/basic.test.ts` passes;
+      the 4 `integration.test.ts` failures are pre-existing (require a live Planfix account/`.env`)
+- [x] confirm `SKILL.md` frontmatter is valid (parseable `name: planfix-api-client` + `description`)
+      and all relative links resolve — frontmatter parses; all links in SKILL.md + references checked
+      from their containing dirs, none broken
 
 ### Task 8: [Final] Update documentation
-- [ ] add `examples/skill-quickstart.ts` to the `README.md` examples list (per AGENTS.md "Add new
+- [x] add `examples/skill-quickstart.ts` to the `README.md` examples list (per AGENTS.md "Add new
       example scripts description to README.md") and mention the `skills/planfix-api-client` skill
-- [ ] note any new pattern/convention discovered during implementation in the relevant `docs/` file
-      if warranted
+      — added item 8 to «Примеры» and a «Навык для агентов» section linking SKILL.md, the four
+      references, and the quickstart; all README links verified to resolve from repo root
+- [x] note any new pattern/convention discovered during implementation in the relevant `docs/` file
+      if warranted — recorded the typed custom-field write shape (`customFieldData: [{ field: { id },
+      value }]`, `value` wrapped) vs the old `customFields: [{ id, value }]` in `docs/dictionary.md`,
+      linking to `mutations.md`
 
 *Note: ralphex automatically moves completed plans to `docs/plans/completed/`.*
 

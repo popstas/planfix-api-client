@@ -1,1 +1,1 @@
-- [ ] сделать skill для использования проекта в skills/planfix-api-client
+- [x] сделать skill для использования проекта в skills/planfix-api-client

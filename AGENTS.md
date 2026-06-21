@@ -6,7 +6,7 @@ Guidelines for contributors:
   from `swagger.json` using `openapi-generator`.
 - To regenerate the client, run:
   ```bash
-  npx @openapitools/openapi-generator-cli generate -i swagger.json -g typescript-axios -o src/generated
+  npx @openapitools/openapi-generator-cli generate -i swagger.json -g typescript-fetch -o src/generated
   ```
   After regeneration, run `npm run build` and commit changes.
 - Always run `npm test` before committing. Tests must pass.
