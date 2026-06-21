@@ -197,10 +197,14 @@
       from their containing dirs, none broken
 
 ### Task 8: [Final] Update documentation
-- [ ] add `examples/skill-quickstart.ts` to the `README.md` examples list (per AGENTS.md "Add new
+- [x] add `examples/skill-quickstart.ts` to the `README.md` examples list (per AGENTS.md "Add new
       example scripts description to README.md") and mention the `skills/planfix-api-client` skill
-- [ ] note any new pattern/convention discovered during implementation in the relevant `docs/` file
-      if warranted
+      — added item 8 to «Примеры» and a «Навык для агентов» section linking SKILL.md, the four
+      references, and the quickstart; all README links verified to resolve from repo root
+- [x] note any new pattern/convention discovered during implementation in the relevant `docs/` file
+      if warranted — recorded the typed custom-field write shape (`customFieldData: [{ field: { id },
+      value }]`, `value` wrapped) vs the old `customFields: [{ id, value }]` in `docs/dictionary.md`,
+      linking to `mutations.md`
 
 *Note: ralphex automatically moves completed plans to `docs/plans/completed/`.*
 
