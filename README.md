@@ -26,7 +26,8 @@
 
 Запуск любого примера:
 ```bash
-npm run example -- ./examples/<file>.ts
+npx tsx examples/<file>.ts
+```
 
 ## Сборка и тесты
 ```bash

@@ -1,6 +1,6 @@
 # API surface map
 
-The client wraps the Planfix REST API as **18 generated `*Api` classes** (in
+The client wraps the Planfix REST API as **17 generated `*Api` classes** (in
 `src/generated/apis/`, re-exported from `src/generated`). Every class extends a common
 `runtime.BaseAPI` and takes a `Configuration` in its constructor, so the instantiation
 pattern is identical for all of them:
@@ -42,7 +42,7 @@ Planfix terminology is Russian. Map a term to its English identifier (see
 | Кастомное поле | `customfield` | `CustomFieldsApi` + the `CustomFields*` family |
 | (служебное) ping | — | `MonitoringApi` |
 
-## The 18 classes
+## The 17 classes
 
 ### Core entities
 

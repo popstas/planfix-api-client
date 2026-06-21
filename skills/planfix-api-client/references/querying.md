@@ -113,4 +113,3 @@ Full filter-type tables and Planfix docs: [`docs/complex-filters.md`](../../../d
 - Endpoint catalog: [`docs/ENDPOINTS.md`](../../../docs/ENDPOINTS.md)
 - RU↔EN terminology: [`docs/dictionary.md`](../../../docs/dictionary.md)
 - Class/method map: [api-surface.md](api-surface.md) · Writing data: [mutations.md](mutations.md)
-</content>

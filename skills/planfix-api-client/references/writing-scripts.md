@@ -141,10 +141,7 @@ Use the returned ids in `fields: 'id,name,<fieldId>'` (reading,
 ## Running a script
 
 ```bash
-# Via the README convention:
-npm run example -- ./examples/<file>.ts -- --dryRun
-
-# Or directly with tsx (what the package.json scripts use):
+# Run with tsx (what the package.json scripts use):
 npx tsx examples/<file>.ts --dryRun
 ```
 
