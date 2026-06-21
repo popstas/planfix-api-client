@@ -38,14 +38,15 @@ Contacts are identical with `getContactList` → `res.contacts`.
 
 ## Get one record (`getXById`)
 
-`getXById` takes the id directly in the request object (no wrapper), plus an optional
-`fields`. **Watch the id type**: it differs by entity.
+`getXById` takes the id directly in the request object (no wrapper). Task and contact
+also accept an optional `fields`; `getObjectById` takes only `id`. **Watch the id type**:
+it differs by entity.
 
 | Method | id type | Response field |
 |--------|---------|----------------|
 | `getTaskById({ id, fields })` | `number` | `res.task` (`TaskResponse`) |
 | `getContactById({ id, fields })` | `string` | `res.contact` (`ContactResponse`) |
-| `getObjectById({ id, fields })` | `number` | `res.object` |
+| `getObjectById({ id })` | `number` | `res.object` |
 
 ```ts
 const t = await taskApi.getTaskById({ id: 123, fields: 'id,name' });
