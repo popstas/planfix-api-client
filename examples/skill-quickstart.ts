@@ -17,7 +17,12 @@
  */
 import { TaskApi, ContactApi, ObjectApi, CustomFieldsTaskApi } from '../src/generated';
 import { loadConfig } from '../src/config';
-import type { Configuration } from '../src/generated';
+import type {
+  Configuration,
+  ComplexTaskFilter,
+  TaskResponse,
+  ContactResponse,
+} from '../src/generated';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -61,6 +66,54 @@ function buildApis(config: Configuration) {
     objectApi: new ObjectApi(config),
     cfTaskApi: new CustomFieldsTaskApi(config),
   };
+}
+
+/**
+ * Reading patterns documented in `references/querying.md`. NOT called by the run-guard's
+ * live path — it exists so `tsc` validates the read method names and request/response
+ * shapes (`getXListRequest` wrapper, the response array field, get-by-id params).
+ */
+export async function readExamples(apis: ReturnType<typeof buildApis>): Promise<void> {
+  const { taskApi, contactApi } = apis;
+
+  // Pagination: offset/pageSize loop, break on a short or empty page
+  // (pattern from `examples/contacts-export.ts`).
+  const pageSize = 100;
+  let offset = 0;
+  const allTasks: TaskResponse[] = [];
+  while (true) {
+    const page = await taskApi.getTaskList({
+      getTaskListRequest: { offset, pageSize, fields: 'id,name' },
+    });
+    const tasks = page.tasks ?? []; // response array lives in `.tasks`
+    allTasks.push(...tasks);
+    if (tasks.length < pageSize) break; // short/empty page → done
+    offset += pageSize;
+  }
+
+  // Complex filters: pass `filters: ComplexTaskFilter[]` in the list request.
+  const filters: ComplexTaskFilter[] = [
+    { type: 2, operator: 'equal', value: 5 }, // type 2 = assignee (USER); value = user id
+  ];
+  await taskApi.getTaskList({
+    getTaskListRequest: { offset: 0, pageSize: 1, fields: 'id,name', filters },
+  });
+
+  // Contact list (response array lives in `.contacts`).
+  const contactPage = await contactApi.getContactList({
+    getContactListRequest: { offset: 0, pageSize: 1, fields: 'id,name' },
+  });
+  const contacts: ContactResponse[] = contactPage.contacts ?? [];
+
+  // Get-by-id: `getTaskById` takes a numeric id; `getContactById` takes a string id.
+  if (allTasks[0]?.id != null) {
+    const one = await taskApi.getTaskById({ id: allTasks[0].id, fields: 'id,name' });
+    console.log(`Task: ${one.task?.name ?? ''}`);
+  }
+  if (contacts[0]?.id != null) {
+    const c = await contactApi.getContactById({ id: String(contacts[0].id), fields: 'id,name' });
+    console.log(`Contact: ${c.contact?.name ?? ''}`);
+  }
 }
 
 export async function skillQuickstart(): Promise<void> {

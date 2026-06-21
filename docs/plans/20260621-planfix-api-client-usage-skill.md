@@ -116,16 +116,19 @@
       passes: "No errors found")
 
 ### Task 3: Querying / reading data — `references/querying.md`
-- [ ] document list + get-by-id for tasks/contacts/objects: `getTaskList`/`getContactList`,
+- [x] document list + get-by-id for tasks/contacts/objects: `getTaskList`/`getContactList`,
       `getTaskById`/`getContactById`, `getObjectById`, including the request wrapper shape
       (`{ getXListRequest: { ... } }`) and the response field holding the array
-- [ ] document the **pagination pattern** (offset/pageSize loop, break on short/empty page) from
+      — documented; noted that `getTaskById` id is `number` but `getContactById` id is `string`,
+      response arrays live in `.tasks`/`.contacts`, single records in `.task`/`.contact`
+- [x] document the **pagination pattern** (offset/pageSize loop, break on short/empty page) from
       `contacts-export.ts`, and the **complex-filters** usage (link `docs/complex-filters.md`,
       reference `ComplexTaskFilter` / `ComplexContactFilter`)
-- [ ] extend `examples/skill-quickstart.ts` with a `readExamples()` function that calls
+- [x] extend `examples/skill-quickstart.ts` with a `readExamples()` function that calls
       `getTaskList` (paginated loop), `getContactList`, `getTaskById`, `getContactById` — typecheck
-      only, not invoked by the run-guard's live path
-- [ ] run the typecheck gate — **must pass** before Task 4 (validates method names + request shapes)
+      only, not invoked by the run-guard's live path (also exercises `ComplexTaskFilter`)
+- [x] run the typecheck gate — **must pass** before Task 4 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found"); all relative links in `querying.md` verified to resolve
 
 ### Task 4: Updating / writing data — `references/mutations.md`
 - [ ] document mass-update loop (list → filter → update) from `mass-update-contacts.ts`, custom-field
