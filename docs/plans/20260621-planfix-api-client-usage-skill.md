@@ -104,15 +104,16 @@
       account/`.env`) and unchanged with my work stashed (no regressions)
 
 ### Task 2: API surface map — `references/api-surface.md`
-- [ ] document all 18 `*Api` classes, the entity each covers, and how to import/instantiate them
+- [x] document all 18 `*Api` classes, the entity each covers, and how to import/instantiate them
       (`new XApi(loadConfig())`); use the RU→identifier dictionary so readers can map Planfix terms
-- [ ] for each major area list the key endpoints and link `docs/ENDPOINTS.md`,
-      `docs/complex-filters.md`, `docs/dictionary.md` (verify these relative links resolve from the
-      skill location)
-- [ ] extend `examples/skill-quickstart.ts` to instantiate the primary classes referenced
-      (`TaskApi`, `ContactApi`, `ObjectApi`, and at least one CustomFields* class) so tsc proves the
-      class names are accurate
-- [ ] run the typecheck gate — **must pass** before Task 3 (any wrong class name fails here)
+- [x] for each major area list the key endpoints and link `docs/ENDPOINTS.md`,
+      `docs/complex-filters.md`, `docs/dictionary.md` (relative links `../../../docs/*.md` verified
+      to resolve from the references dir)
+- [x] extend `examples/skill-quickstart.ts` to instantiate the primary classes referenced
+      (`TaskApi`, `ContactApi`, `ObjectApi`, and `CustomFieldsTaskApi`) via a `buildApis()` helper so
+      tsc proves the class names are accurate
+- [x] run the typecheck gate — **must pass** before Task 3 (`npx tsc --noEmit -p tsconfig.skill.json`
+      passes: "No errors found")
 
 ### Task 3: Querying / reading data — `references/querying.md`
 - [ ] document list + get-by-id for tasks/contacts/objects: `getTaskList`/`getContactList`,

@@ -15,7 +15,7 @@
  * No mutation is ever sent from this file — write request shapes are constructed for
  * typechecking only (added in later tasks), never dispatched.
  */
-import { TaskApi } from '../src/generated';
+import { TaskApi, ContactApi, ObjectApi, CustomFieldsTaskApi } from '../src/generated';
 import { loadConfig } from '../src/config';
 import type { Configuration } from '../src/generated';
 import * as path from 'path';
@@ -49,10 +49,24 @@ async function harmlessRead(taskApi: TaskApi): Promise<void> {
   console.log(`Fetched ${tasks.length} task(s).`);
 }
 
+/**
+ * Instantiate the primary `*Api` classes the skill docs reference. This proves the class
+ * names in `references/api-surface.md` are accurate (one `Configuration`, reused). The
+ * instances are returned so other (typecheck-only) example functions can use them.
+ */
+function buildApis(config: Configuration) {
+  return {
+    taskApi: new TaskApi(config),
+    contactApi: new ContactApi(config),
+    objectApi: new ObjectApi(config),
+    cfTaskApi: new CustomFieldsTaskApi(config),
+  };
+}
+
 export async function skillQuickstart(): Promise<void> {
   const opts = parseArgs(process.argv.slice(2));
   const config: Configuration = loadConfig();
-  const taskApi = new TaskApi(config);
+  const { taskApi } = buildApis(config);
 
   console.log(`dryRun=${opts.dryRun}`);
   await harmlessRead(taskApi);
