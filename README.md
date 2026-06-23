@@ -23,6 +23,7 @@
 6. `contacts-update-supplier-gdrive.ts` – синхронизация пользовательского поля `gdrive_emails` у контактов по CSV (`Номер`, `Email`); обновляет только при расхождении списков email; аргументы: `--csv`, `--fieldId`, `--dryRun`.
 7. `contacts-update-last-payment-date.ts` – обновление даты последнего платежа в пользовательском поле контакта по CSV (`Клиент номер`, `Дата`); формат даты `DD-MM-YYYY`; аргументы: `--csv`, `--fieldId`, `--limit`, `--dryRun`, `--logCsv`; лог в `data/contacts-last-payment-date-log.csv`.
 8. `skill-quickstart.ts` – компилируемый эталонный пример к навыку `planfix-api-client`: демонстрирует чтение (`getTaskList` с пагинацией, `getContactList`, `getTaskById`, `getContactById`), конструирование обновлений (`postContactById`, `postTaskById`, `postContact`) под `--dryRun`, а также вспомогательные хелперы (CSV-лог, поиск `fieldId` по `templateId`); run-guard выполняет только безопасное чтение.
+9. `copy-writing-language-to-publication.ts` – копирование поля «Язык написания» из последних N написаний СМИ и научных в статусе «Опубликовано» в их дочерний объект «Публикация»; id поля и статуса резолвятся по имени, нужны только id объектов; аргументы: `--smiWritingTemplateId`, `--sciWritingTemplateId`, `--publicationTemplateId`, `--languageFieldName`, `--statusName`, `--limit`, `--overwrite`, `--csv`, `--dryRun`; лог в `data/copy-writing-language.csv`.
 
 Запуск любого примера:
 ```bash
