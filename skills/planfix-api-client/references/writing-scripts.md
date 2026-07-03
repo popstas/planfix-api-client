@@ -1,142 +1,88 @@
 # Writing new example scripts (conventions)
 
-The repo conventions (from `AGENTS.md`) for any new script under `examples/`. The helpers
-shown here are exercised in
-[`examples/skill-quickstart.ts`](../../../examples/skill-quickstart.ts) (`parseArgs()`,
-`appendCsvLog()`, `lookupFieldIds()`), so they are compile-checked against the real
-generated API. Treat `skill-quickstart.ts` as the canonical template to copy from.
+The repo conventions (from `AGENTS.md`) for any new script under `examples/`.
+
+**Copy [`examples/example-template.ts`](../../../examples/example-template.ts)** — it is
+the canonical template: config → typed args → fieldId lookup → paginated read →
+dryRun-gated mutation → CSV audit log → run-guard. All helpers are **imported from
+[`examples/lib`](../../../examples/lib/)** — never copy-paste helper code between scripts.
+(`examples/skill-quickstart.ts` is only the compile-check harness for these docs, not the
+file to copy.)
 
 See also: [api-surface.md](api-surface.md) (class map) · [querying.md](querying.md)
 (reading) · [mutations.md](mutations.md) (writing + safe-mutation rules).
 
 ## Script skeleton
 
-Every example follows the same shape (config → args → work → run-guard):
+Every script follows the same shape (config → args → work → run-guard):
 
 ```ts
-import { TaskApi } from '../src/generated';
+import { ComplexTaskFilter, ComplexTaskFilterOperatorEnum, ComplexTaskFilterTypeEnum } from '../src/generated';
 import { loadConfig } from '../src/config';
-import type { Configuration } from '../src/generated';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
+import {
+  buildApis, createCsvLogger, formatApiError, getStringFieldValue,
+  lookupFieldIds, paginate, parseArgs, runExample, sleep,
+} from './lib';
 
-interface Options {
-  dryRun: boolean;
-  // ...script-specific args...
-}
-
-function parseArgs(args: string[]): Options { /* see below */ }
+const ARG_SPEC = {
+  dryRun: { type: 'boolean' },
+  templateId: { type: 'number', required: true },
+  fieldName: { type: 'string', required: true },
+  csv: { type: 'string', default: 'data/my-script-log.csv' },
+  limit: { type: 'number', default: 10 },
+} as const;
 
 export async function myScript(): Promise<void> {
-  const opts = parseArgs(process.argv.slice(2));
-  const config: Configuration = loadConfig();
-  const taskApi = new TaskApi(config);
+  const opts = parseArgs(process.argv.slice(2), ARG_SPEC); // typed: opts.templateId is number
+  const { taskApi, objectApi } = buildApis(loadConfig());
   // ...work, gated behind opts.dryRun for any write...
 }
 
-// Run-guard: only auto-run when invoked directly (never on import).
-function isMainModule(): boolean {
-  if (typeof process === 'undefined' || !process.argv[1]) return false;
-  const __filename = fileURLToPath(import.meta.url);
-  return path.resolve(process.argv[1]) === path.resolve(__filename);
-}
-if (isMainModule()) {
-  myScript().catch(err => { console.error(err); process.exitCode = 1; });
-}
+runExample(import.meta.url, myScript); // run-guard: only auto-runs when invoked directly
 ```
 
 `loadConfig()` (in `src/config.ts`) reads `.env` (`PLANFIX_ACCOUNT`, `PLANFIX_TOKEN`) and
-returns a `Configuration`. Build each `*Api` from that one config (see
+returns a `Configuration`; `buildApis()` builds the common `*Api` instances from it (see
 [api-surface.md](api-surface.md)).
 
-## `--dryRun` arg parsing (required for writes)
+## Shared helper library `examples/lib`
 
-Parse flags by walking `process.argv.slice(2)`; values follow their flag. **Every script
-that mutates data must accept `--dryRun`** (AGENTS.md). Pattern from
-[`examples/contacts-migrate-telegram.ts`](../../../examples/contacts-migrate-telegram.ts):
+| Module | Exports | Use for |
+| --- | --- | --- |
+| `args.ts` | `parseArgs(argv, spec)` | Typed `--flag` parsing; throws on unknown/missing/NaN; `required` + `default` per flag. **Every mutating script must accept `--dryRun`** (AGENTS.md). |
+| `csv.ts` | `appendCsvLog`, `createCsvLogger`, `writeCsvFile`, `parseCsv`, `readCsvFile`, `escapeCsvValue`, `ensureDirectory` | Audit logs to `data/*.csv` (header-if-empty + append) and RFC-4180 CSV reading (quotes, `""`, embedded newlines, BOM, `,`/`;`). |
+| `fields.ts` | `lookupFieldIds`, `lookupStatusIdByName`, `getCustomFieldValue`, `getStringFieldValue`, `isFieldTrue`, `getDictionaryValue`, `getIdSetFieldValue`, `getDateFieldValue` | fieldName→fieldId by template; extracting every custom-field value shape Planfix returns. |
+| `paginate.ts` | `paginate(fetchPage, {pageSize, limit, fixedOffset})`, `collectAll` | The canonical offset loop for `getTaskList`/`getContactList`/directory entries. |
+| `api.ts` | `buildApis(config)`, `formatApiError(error)` | One `Configuration` → `{taskApi, contactApi, objectApi, cfTaskApi}`; error messages incl. HTTP status/body. |
+| `run.ts` | `runExample(import.meta.url, main)`, `isMainModule`, `sleep` | Run-guard + `process.exitCode = 1` on failure; rate-limit between writes. |
+
+Key patterns:
 
 ```ts
-function parseArgs(args: string[]): Options {
-  const opts: Options = { dryRun: false, templateId: 0 };
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === '--dryRun') opts.dryRun = true;
-    else if (arg === '--templateId') opts.templateId = Number(args[++i]);
-  }
-  if (!opts.templateId) throw new Error('templateId is required');
-  return opts;
-}
+// fieldName → fieldId, once, up front (throws when a name is missing):
+const fieldIds = await lookupFieldIds(objectApi, opts.templateId, [opts.fieldName]);
+const fieldId = fieldIds.get(opts.fieldName)!;
+
+// Pagination — adapter closure works for any list endpoint:
+for await (const task of paginate(
+  (offset, pageSize) =>
+    taskApi.getTaskList({ getTaskListRequest: { offset, pageSize, filters, fields: `id,name,${fieldId}` } })
+      .then(r => r.tasks ?? []),
+  { limit: opts.limit },
+)) { /* ... */ }
+
+// CSV audit log — batch in memory, flush in `finally` so partial runs keep the log:
+const log = createCsvLogger(opts.csv, ['date', 'task_id', 'old_value', 'new_value', 'dry_run', 'status']);
+try { /* log.add([...]) per item */ } finally { log.flush(); }
 ```
 
 Under dry-run, build the request and log what *would* change — but never call any `postX`.
 See the safe-mutation rules in [mutations.md](mutations.md).
 
-## CSV logging to `data/*.csv`
-
-Log every change to a `data/*.csv` audit trail so a run is reviewable and resumable
-(AGENTS.md: "Add log to CSV, reference: change-manager-in-subtasks.ts"). The convention is
-**header-if-empty + `fs.appendFileSync` + value escaping**, from
-[`examples/change-manager-in-subtasks.ts`](../../../examples/change-manager-in-subtasks.ts):
-
-```ts
-import * as fs from 'fs';
-import * as path from 'path';
-
-function appendCsvLog(filePath: string, headers: string[], rows: string[][]): void {
-  if (!rows.length) return;
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-  const escape = (v: string) =>
-    /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-
-  // Write the header only when the file is new/empty.
-  const addHeader = !fs.existsSync(filePath) || fs.statSync(filePath).size === 0;
-  const lines = addHeader ? [headers.join(',')] : [];
-  for (const row of rows) lines.push(row.map(escape).join(','));
-  fs.appendFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
-}
-```
-
-Batch rows in memory and flush once in a `finally` block so a partial run still leaves a
-log (see `change-manager-in-subtasks.ts`).
-
-## `fieldName → fieldId` lookup by template
-
-Custom fields are addressed by numeric id, but scripts take human field **names** as args.
-Resolve names to ids once, up front, from the template/object's `customFieldData`
-(AGENTS.md: "When args contains fieldName, get fieldId by templateId and fieldName,
-reference: change-manager-by-client.ts"):
-
-```ts
-import { ObjectApi } from '../src/generated';
-
-async function lookupFieldIds(
-  objectApi: ObjectApi,
-  templateId: number,
-  names: string[],
-): Promise<Map<string, number>> {
-  const resp = await objectApi.getObjectById({ id: templateId });
-  const object = resp.object;
-  if (!object) throw new Error(`template ${templateId} not found`);
-
-  const byName = new Map<string, number>();
-  object.customFieldData?.forEach(cf => {
-    const id = cf.field?.id;
-    const name = cf.field?.name;
-    if (id && name) byName.set(name, id);
-  });
-
-  for (const name of names) {
-    if (!byName.has(name)) throw new Error(`field "${name}" not found in template ${templateId}`);
-  }
-  return byName;
-}
-```
-
-Use the returned ids in `fields: 'id,name,<fieldId>'` (reading,
-[querying.md](querying.md)) and in `customFieldData: [{ field: { id }, value }]` (writing,
-[mutations.md](mutations.md)).
+Use looked-up ids in `fields: 'id,name,<fieldId>'` (reading, [querying.md](querying.md))
+and in `customFieldData: [{ field: { id }, value }]` (writing, [mutations.md](mutations.md)).
+Note: the generated type declares `value: object` — cast plain strings/numbers
+(`value as unknown as object`), as `example-template.ts` does.
 
 ## Running a script
 
@@ -151,7 +97,8 @@ Scripts that need fixed args get a named `package.json` script (e.g.
 
 ## Typecheck gate
 
-Examples are outside `npm run build`. Typecheck the quickstart (and the symbols it cites):
+Examples are outside `npm run build`. `tsconfig.skill.json` typechecks the quickstart,
+the shared lib and the template — every helper and API symbol these docs cite:
 
 ```bash
 npx tsc --noEmit -p tsconfig.skill.json

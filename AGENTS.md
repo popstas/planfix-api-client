@@ -11,10 +11,17 @@ Guidelines for contributors:
   After regeneration, run `npm run build` and commit changes.
 - Always run `npm test` before committing. Tests must pass.
 - Documentation lives under `docs/` and usage examples under `examples/`.
+- New example scripts: copy `examples/example-template.ts` and import shared helpers
+  from `examples/lib` (`parseArgs`, `appendCsvLog`/`createCsvLogger`, `lookupFieldIds`,
+  `paginate`, `formatApiError`, `runExample`) — do not copy-paste helper code between scripts.
 - Add new example scripts description to README.md
-- Add log to CSV, reference: change-manager-in-subtasks.ts
-- When args contains fieldName, get fieldId by templateId and fieldName, reference: change-manager-by-client.ts
+- Add log to CSV: `appendCsvLog`/`createCsvLogger` from `examples/lib/csv.ts`
+  (historical reference: change-manager-in-subtasks.ts)
+- When args contains fieldName, get fieldId by templateId and fieldName:
+  `lookupFieldIds` from `examples/lib/fields.ts` (historical reference: change-manager-by-client.ts)
 - Add --dryRun arg to new example scripts
+- Typecheck examples: `npx tsc --noEmit -p tsconfig.skill.json` (covers `examples/lib`
+  and `examples/example-template.ts`; other examples run via tsx without typecheck)
 
 # Pull request naming
 Create name using angular commit message format.

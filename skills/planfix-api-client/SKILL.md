@@ -53,12 +53,18 @@ Start from your goal and open the one matching reference:
 | Read data — list, get-by-id, pagination, complex filters | [references/querying.md](references/querying.md) |
 | Write data — mass-update, custom fields, safe mutation | [references/mutations.md](references/mutations.md) |
 | Scaffold a new example script — config, dryRun, CSV log, fieldId lookup | [references/writing-scripts.md](references/writing-scripts.md) |
-| Copy a runnable, compile-checked starting point | [`examples/skill-quickstart.ts`](../../examples/skill-quickstart.ts) |
+| Copy a runnable, compile-checked starting point | [`examples/example-template.ts`](../../examples/example-template.ts) |
+| Import shared helpers (parseArgs, CSV, fieldId lookup, pagination) | [`examples/lib/`](../../examples/lib/) |
+
+`examples/example-template.ts` is the canonical template to copy for a new script; it
+imports its helpers from `examples/lib` (import, don't copy). `examples/skill-quickstart.ts`
+remains the docs compile-check harness only.
 
 ## Verification gate
 
 Examples are outside `npm run build` (which compiles `src/**` only). Typecheck the
-quickstart — and thereby every API symbol the docs cite — with:
+quickstart, the shared lib and the template — and thereby every API symbol the docs
+cite — with:
 
 ```bash
 npx tsc --noEmit -p tsconfig.skill.json
