@@ -12,6 +12,7 @@ interface Options {
   limit: number;
   dryRun: boolean;
   logCsv: string;
+  ignoreDayShift: boolean;
 }
 
 interface CsvRow {
@@ -26,8 +27,10 @@ interface Stats {
   skippedInvalidDate: number;
   skippedInvalidId: number;
   matched: number;
+  matchedDayShift: number;
   needUpdate: number;
   updated: number;
+  overwritten: number;
   errors: number;
 }
 
@@ -58,6 +61,7 @@ function parseArgs(args: string[]): Options {
     limit: 0,
     dryRun: false,
     logCsv: defaultLogCsv,
+    ignoreDayShift: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -72,6 +76,8 @@ function parseArgs(args: string[]): Options {
       options.dryRun = true;
     } else if (arg === '--logCsv') {
       options.logCsv = args[++i];
+    } else if (arg === '--ignoreDayShift') {
+      options.ignoreDayShift = true;
     }
   }
 
@@ -125,6 +131,26 @@ function parseDelimitedLine(line: string, delimiter: string): string[] {
 
 function isValidDateFormat(value: string): boolean {
   return /^\d{2}-\d{2}-\d{4}$/.test(value);
+}
+
+// Parse a "DD-MM-YYYY" string into a UTC epoch (ms), or null if malformed.
+function parseDmyUtc(value: string): number | null {
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
+  if (!match) {
+    return null;
+  }
+  const [, dd, mm, yyyy] = match;
+  return Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd));
+}
+
+// Signed difference (current - expected) in whole days, or null if unparseable.
+function dayDiff(current: string, expected: string): number | null {
+  const a = parseDmyUtc(current);
+  const b = parseDmyUtc(expected);
+  if (a == null || b == null) {
+    return null;
+  }
+  return Math.round((a - b) / 86_400_000);
 }
 
 function parseCsv(filePath: string): CsvRow[] {
@@ -229,11 +255,30 @@ function getCurrentFieldValue(contact: any, fieldId: number): string {
   }
 
   const value = customField.value as unknown;
+  if (value == null) {
+    return '';
+  }
   if (typeof value === 'string') {
     return value.trim();
   }
-  if (value == null) {
-    return '';
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    // Planfix date fields come back as { date: "DD-MM-YYYY", datetime, time }.
+    if (typeof obj.date === 'string') {
+      return obj.date.trim();
+    }
+    if (typeof obj.datetime === 'string') {
+      return obj.datetime.trim();
+    }
+    // Dictionary fields come back as { id, value }.
+    if (typeof obj.value === 'string') {
+      return obj.value.trim();
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
   }
   return String(value).trim();
 }
@@ -305,8 +350,10 @@ export async function contactsUpdateLastPaymentDate() {
     skippedInvalidDate: 0,
     skippedInvalidId: 0,
     matched: 0,
+    matchedDayShift: 0,
     needUpdate: 0,
     updated: 0,
+    overwritten: 0,
     errors: 0,
   };
 
@@ -410,34 +457,65 @@ export async function contactsUpdateLastPaymentDate() {
         continue;
       }
 
+      if (opts.ignoreDayShift && currentValue) {
+        const diff = dayDiff(currentValue, row.lastPaymentDate);
+        if (diff != null && Math.abs(diff) <= 1) {
+          stats.matchedDayShift++;
+          addLogRow({
+            level: 'info',
+            contact_id: String(row.contactId),
+            contact_name: contactName,
+            current_value: currentValue,
+            expected_value: row.lastPaymentDate,
+            action: 'matched_day_shift',
+            note: `Ignored ${diff > 0 ? '+' : ''}${diff}-day shift (likely timezone)`,
+          });
+          continue;
+        }
+      }
+
       stats.needUpdate++;
+      const isOverwrite = currentValue !== '';
       if (opts.dryRun) {
         console.log(
-          `[DRY RUN] contact ${row.contactId} (${contactName}): "${currentValue}" -> "${row.lastPaymentDate}"`,
+          `[DRY RUN] ${isOverwrite ? 'OVERWRITE' : 'update'} contact ${row.contactId} (${contactName}): "${currentValue}" -> "${row.lastPaymentDate}"`,
         );
         addLogRow({
-          level: 'info',
+          level: isOverwrite ? 'warn' : 'info',
           contact_id: String(row.contactId),
           contact_name: contactName,
           current_value: currentValue,
           expected_value: row.lastPaymentDate,
-          action: 'dry_run_update',
-          note: 'Would update value',
+          action: isOverwrite ? 'dry_run_overwrite' : 'dry_run_update',
+          note: isOverwrite
+            ? `Would overwrite "${currentValue}" with "${row.lastPaymentDate}"`
+            : 'Would update value',
         });
         continue;
       }
 
       await updateContactDate(row.contactId, row.lastPaymentDate);
       stats.updated++;
-      console.log(`Updated contact ${row.contactId} (${contactName})`);
+      if (isOverwrite) {
+        stats.overwritten++;
+        console.warn(
+          `Overwritten contact ${row.contactId} (${contactName}): "${currentValue}" -> "${row.lastPaymentDate}"`,
+        );
+      } else {
+        console.log(
+          `Updated contact ${row.contactId} (${contactName}): "" -> "${row.lastPaymentDate}"`,
+        );
+      }
       addLogRow({
-        level: 'info',
+        level: isOverwrite ? 'warn' : 'info',
         contact_id: String(row.contactId),
         contact_name: contactName,
         current_value: currentValue,
         expected_value: row.lastPaymentDate,
-        action: 'updated',
-        note: 'Value updated',
+        action: isOverwrite ? 'overwritten' : 'updated',
+        note: isOverwrite
+          ? `Overwrote "${currentValue}" with "${row.lastPaymentDate}"`
+          : 'Value updated',
       });
     } catch (error) {
       stats.errors++;
@@ -463,8 +541,12 @@ export async function contactsUpdateLastPaymentDate() {
   console.log(`Skipped (invalid date): ${stats.skippedInvalidDate}`);
   console.log(`Skipped (invalid id): ${stats.skippedInvalidId}`);
   console.log(`Already matched: ${stats.matched}`);
+  if (opts.ignoreDayShift) {
+    console.log(`Matched within 1-day shift (ignored): ${stats.matchedDayShift}`);
+  }
   console.log(`Need update: ${stats.needUpdate}`);
   console.log(`Updated: ${stats.updated}`);
+  console.log(`  of them overwritten (had a different value): ${stats.overwritten}`);
   console.log(`Errors: ${stats.errors}`);
   console.log(`Log saved: ${opts.logCsv}`);
 }
