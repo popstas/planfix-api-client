@@ -13,6 +13,7 @@ interface Options {
   dryRun: boolean;
   logCsv: string;
   ignoreDayShift: boolean;
+  dateHeader: string;
 }
 
 interface CsvRow {
@@ -48,6 +49,7 @@ interface LogRow {
 const defaultCsv = 'data/contacts-last-payment-date.csv';
 const defaultFieldId = 873;
 const defaultLogCsv = 'data/contacts-last-payment-date-log.csv';
+const defaultDateHeader = 'Дата';
 
 let opts: Options;
 let config: Configuration;
@@ -62,6 +64,7 @@ function parseArgs(args: string[]): Options {
     dryRun: false,
     logCsv: defaultLogCsv,
     ignoreDayShift: false,
+    dateHeader: defaultDateHeader,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -78,6 +81,8 @@ function parseArgs(args: string[]): Options {
       options.logCsv = args[++i];
     } else if (arg === '--ignoreDayShift') {
       options.ignoreDayShift = true;
+    } else if (arg === '--dateHeader') {
+      options.dateHeader = args[++i];
     }
   }
 
@@ -89,6 +94,9 @@ function parseArgs(args: string[]): Options {
   }
   if (!options.logCsv) {
     throw new Error('logCsv is required');
+  }
+  if (!options.dateHeader) {
+    throw new Error('dateHeader is required');
   }
   if (!Number.isFinite(options.limit) || options.limit < 0) {
     throw new Error('limit must be a non-negative number');
@@ -170,13 +178,13 @@ function parseCsv(filePath: string): CsvRow[] {
 
   const headers = parseDelimitedLine(lines[0], ';');
   const contactIndex = headers.indexOf('Клиент номер');
-  const dateIndex = headers.indexOf('Дата');
+  const dateIndex = headers.indexOf(opts.dateHeader);
 
   if (contactIndex === -1) {
     throw new Error('CSV header "Клиент номер" not found');
   }
   if (dateIndex === -1) {
-    throw new Error('CSV header "Дата" not found');
+    throw new Error(`CSV header "${opts.dateHeader}" not found`);
   }
 
   const rows: CsvRow[] = [];
