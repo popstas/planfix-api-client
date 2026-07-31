@@ -44,6 +44,7 @@ interface Options {
   dryRun: boolean;
   logCsv: string;
   maxSaveAgeMinutes: number;
+  clearContacts: number[];
 }
 
 interface Stats {
@@ -136,6 +137,7 @@ function parseArgs(args: string[]): Options {
     dryRun: false,
     logCsv: defaultLogCsv,
     maxSaveAgeMinutes: 60,
+    clearContacts: [],
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -150,6 +152,11 @@ function parseArgs(args: string[]): Options {
       options.logCsv = args[++i];
     } else if (arg === '--maxSaveAgeMinutes') {
       options.maxSaveAgeMinutes = Number(args[++i]);
+    } else if (arg === '--clearContacts') {
+      options.clearContacts = String(args[++i] ?? '')
+        .split(',')
+        .map(v => Number(v.trim()))
+        .filter(v => Number.isFinite(v) && v > 0);
     }
   }
 
@@ -399,6 +406,69 @@ const FIELDS: { id: number; key: keyof AgencyDates; title: string }[] = [
   { id: FIELD_REVIVED, key: 'revived', title: 'Дата возрождения' },
 ];
 
+// Стереть все четыре даты у перечисленных контактов. Пишем только те поля,
+// что есть в шаблоне контакта - иначе 400 на весь запрос.
+async function clearContacts(contactIds: number[], stats: Stats): Promise<void> {
+  for (const contactId of contactIds) {
+    let contactName = '(unknown)';
+    try {
+      const response = await contactApi.getContactById({
+        id: String(contactId),
+        fields: `id,name,${FIELDS.map(f => f.id).join(',')}`,
+      });
+      const contact = response.contact;
+      if (!contact?.id) {
+        stats.errors++;
+        console.warn(`Contact not found: ${contactId}`);
+        continue;
+      }
+      contactName = contact.name ?? contactName;
+
+      const available = new Set(
+        ((contact as { customFieldData?: { field?: { id?: number } }[] }).customFieldData ?? [])
+          .map(cf => cf.field?.id)
+          .filter((id): id is number => typeof id === 'number'),
+      );
+
+      const changes = FIELDS.filter(
+        field => available.has(field.id) && getCurrentFieldValue(contact, field.id),
+      ).map(field => ({ fieldId: field.id, value: '' }));
+
+      if (!changes.length) {
+        console.log(`${contactName} (${contactId}): даты уже пусты`);
+        continue;
+      }
+
+      for (const change of changes) {
+        const field = FIELDS.find(f => f.id === change.fieldId);
+        addLogRow({
+          level: 'warn',
+          contact_id: String(contactId),
+          contact_name: contactName,
+          field: field?.title ?? String(change.fieldId),
+          current_value: getCurrentFieldValue(contact, change.fieldId),
+          expected_value: '',
+          action: opts.dryRun ? 'would_clear' : 'clear',
+          note: 'Контакт больше не агентство в отчёте',
+        });
+      }
+
+      if (opts.dryRun) {
+        console.log(`[dry] clear ${contactName} (${contactId}): ${changes.length} полей`);
+        continue;
+      }
+
+      await updateContactFields(contactId, changes);
+      stats.updated++;
+      console.log(`Cleared ${contactName} (${contactId}): ${changes.length} полей`);
+    } catch (error) {
+      stats.errors++;
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`Error on ${contactName} (${contactId}): ${message}`);
+    }
+  }
+}
+
 export async function contactsUpdateAgencyPaymentDates() {
   opts = parseArgs(process.argv.slice(2));
   config = loadConfig();
@@ -419,6 +489,16 @@ export async function contactsUpdateAgencyPaymentDates() {
 
   if (opts.dryRun) {
     console.log('DRY RUN MODE: no data will be modified');
+  }
+
+  // Когда оплаты передают другому агентству, у прежнего контакта даты остаются висеть
+  // и он продолжает считаться агентством в фильтрах "новые" и "возрождённые".
+  // Отчёт про такие контакты уже ничего не знает, поэтому чистим их по списку.
+  if (opts.clearContacts.length) {
+    await clearContacts(opts.clearContacts, stats);
+    writeLogCsv(opts.logCsv, logRows);
+    console.log(`Log: ${opts.logCsv}`);
+    return;
   }
 
   console.log(`Fetching report ${opts.reportId}...`);
